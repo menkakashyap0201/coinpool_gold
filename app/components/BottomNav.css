@@ -1,0 +1,99 @@
+/* ==========================================================
+   CoinPool X — BottomNav
+   Theme: Premium Black + Gold
+   ========================================================== */
+
+:root {
+  --lb-gold:       #D4AF37;
+  --lb-gold2:      #F4D47C;
+  --lb-bg:         #0a0a0c;
+  --lb-bg-2:       #111114;
+  --lb-bg-3:       #18181c;
+  --lb-border:     rgba(212, 175, 55, 0.18);
+  --lb-border-soft:rgba(255, 255, 255, 0.06);
+  --lb-text:       #f5f5f5;
+  --lb-text-muted: #6b6b6b;
+  --lb-green:      #f1f365;
+  --lb-red:        #FF4D6D;
+  --lb-shadow:     0 0 40px rgba(212, 175, 55, 0.15);
+}
+
+.lb-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: linear-gradient(180deg, var(--lb-bg-2) 0%, var(--lb-bg) 100%);
+  border-top: 1px solid var(--lb-border);
+  padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5), var(--lb-shadow);
+}
+.lb-bottom-nav::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lb-gold), transparent);
+  opacity: 0.5;
+}
+
+.lb-nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  padding: 6px 4px;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+}
+.lb-nav-item:hover {
+  background: rgba(212, 175, 55, 0.06);
+}
+
+.lb-nav-label {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--lb-text-muted);
+  transition: color 0.25s ease;
+  text-align: center;
+}
+
+.lb-nav-active .lb-nav-label {
+  color: var(--lb-gold);
+}
+.lb-nav-active {
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.lb-nav-dot {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--lb-gold);
+  box-shadow: 0 0 6px var(--lb-gold);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+  50%       { opacity: 0.6; transform: translateX(-50%) scale(0.7); }
+}
+
+/* ── responsive ── */
+@media (max-width: 360px) {
+  .lb-nav-label { font-size: 7.5px; letter-spacing: 0.6px; }
+  .lb-nav-item  { padding: 5px 2px; }
+}

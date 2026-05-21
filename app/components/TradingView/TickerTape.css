@@ -1,0 +1,76 @@
+/* ==========================================================
+   CoinPool X — TickerTape
+   Theme: Premium Black + Gold
+   ========================================================== */
+
+.ticker-bar {
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 12px 0;
+  position: relative;
+}
+.ticker-bar::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.4;
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: tickerMove 28s linear infinite;
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 34px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.ticker-item::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 16px;
+  background: var(--border-soft);
+  margin-left: 24px;
+}
+
+.ticker-symbol {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+.ticker-price {
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.3px;
+}
+.ticker-up {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+.ticker-down {
+  color: var(--red);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+@keyframes tickerMove {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
