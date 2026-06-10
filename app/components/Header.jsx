@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -38,8 +39,12 @@ export default function Header() {
             </a>
           ))}
           <div className="cpx-nav-cta">
-            <button className="cpx-btn cpx-btn-ghost cpx-btn-sm">Sign In</button>
-            <button className="cpx-btn cpx-btn-primary cpx-btn-sm">Join Now</button>
+            <Link href="/login" className="cpx-btn cpx-btn-ghost cpx-btn-sm">
+              Login
+            </Link>
+            <Link href="/register" className="cpx-btn cpx-btn-primary cpx-btn-sm">
+              Join Now
+            </Link>
           </div>
         </nav>
 

@@ -9,6 +9,7 @@ import {
   CheckIcon, XIcon,
 } from "./components/Icons";
 import "./globals.css";
+import Link from "next/link";
 
 export default function HomePage() {
   const [btcPrice, setBtcPrice] = useState(67432.18);
@@ -71,9 +72,12 @@ export default function HomePage() {
               </p>
 
               <div className="cpx-hero-cta">
-                <button className="cpx-btn cpx-btn-primary">Join Pool</button>
-                <button className="cpx-btn cpx-btn-outline">Enter Premium Arena</button>
-                <button className="cpx-btn cpx-btn-ghost">View Leaderboard</button>
+                <Link href="/register" className="cpx-btn cpx-btn-primary">
+              Join Pool
+            </Link>
+                <Link href="#" className="cpx-btn cpx-btn-outline">
+                  Enter Premium Arena
+                </Link>
               </div>
 
               <div className="cpx-hero-stats">
@@ -176,7 +180,7 @@ export default function HomePage() {
               <div className="cpx-pool-card cpx-pool-featured">
                 <div className="cpx-pool-tag cpx-tag-gold">PREMIUM · ELITE</div>
                 <h3 className="cpx-pool-name">Premium Pool</h3>
-                <p className="cpx-pool-desc">High stakes. Bigger rewards. New slot every 3 hours from 12 PM.</p>
+                <p className="cpx-pool-desc">High stakes. New slot every 3 hours from 12 PM.</p>
 
                 <div className="cpx-pool-price">
                   <span className="cpx-price-currency">$</span>

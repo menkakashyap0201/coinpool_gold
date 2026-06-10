@@ -1,187 +1,497 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import "./home.css";
-// import SparkChart from "../components/TradingView/SparkChart";
-import TickerTape from "../../components/TradingView/TickerTape";
+import SparkChart from "../../components/TradingView/SparkChart";
 
-const BTC_IMAGE_URL = "/hero1.png";
+// React Icons
+import {
+  BiBitcoin,
+} from "react-icons/bi";
+import {
+  FiTrendingUp,
+  FiTrendingDown,
+  FiArrowRight,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiLock,
+  FiClock,
+  FiLoader,
+  FiTarget,
+  FiZap,
+  FiAward,
+} from "react-icons/fi";
+import {
+  MdOutlineWaterDrop,
+} from "react-icons/md";
+import {
+  RiRocketLine,
+  RiNumbersLine,
+  RiBarChartGroupedLine,
+} from "react-icons/ri";
+import {
+  TbChartCandle,
+  TbTrophy,
+  TbMedal,
+  TbCurrencyDollar,
+  TbCircleNumber1,
+  TbCircleNumber2,
+  TbCircleNumber3,
+  TbCircleNumber4,
+  TbUsers,
+  TbPercentage,
+  TbInfoCircle,
+  TbRefresh,
+} from "react-icons/tb";
+import {
+  IoOddEvenSharp,
+} from "react-icons/io5";
+import {
+  PiCoinVerticalDuotone,
+} from "react-icons/pi";
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+const BASE = process.env.NEXT_PUBLIC_API_URL;
+const POLL_INTERVAL = 5000;
+
+const WINNER_ICONS_COMP = [
+  <TbTrophy  key="0" />,
+  <TbMedal   key="1" />,
+  <FiTarget  key="2" />,
+  <TbTrophy  key="3" />,
+  <FiZap     key="4" />,
+  <FiAward   key="5" />,
+];
+
+const RANK_ICONS_COMP = ["🥇", "🥈", "🥉"];
 
 const getToken = () => {
   if (typeof window === "undefined") return "";
   const type  = localStorage.getItem("cpx_token_type") || "Bearer";
-  const token = localStorage.getItem("cpx_token") || "";
+  const token = localStorage.getItem("cpx_token")      || "";
   return `${type} ${token}`;
 };
-const BASE  = process.env.NEXT_PUBLIC_API_URL || "https://anant.cryptodiary.us/api";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const ROOMS = [
-  { id: "standard", label: "STANDARD ROOM", icon: "👥", fee: 5,  playing: 2568, color: "#4A90D9", badge: null },
-  { id: "premium",  label: "PREMIUM ROOM",  icon: "👑", fee: 25, playing: 856,  color: "#FFD700", badge: "EVERY 3H" },
-];
-
-const WINNERS = [
-  { name: "Rahul K.",  amt: "+420 USDT", icon: "🏆" },
-  { name: "Priya S.",  amt: "+210 USDT", icon: "🥈" },
-  { name: "Arjun M.",  amt: "+180 USDT", icon: "🎯" },
-  { name: "Sneha T.",  amt: "+95 USDT",  icon: "⭐" },
-  { name: "Vikram R.", amt: "+340 USDT", icon: "🔥" },
-  { name: "Deepa N.",  amt: "+125 USDT", icon: "💎" },
-];
-
-// ── Hard-coded round participants ─────────────────────────────────────────────
-const HARD_ROUND_BETS = [
-  { id: 1, user: { name: "Rahul K." }, question_1_ans: 8, question_2_ans: 1, question_3_ans: 1, question_4_ans: 1, amount: "25.00", win_amount: "0.00" },
-  { id: 2, user: { name: "Priya S." }, question_1_ans: 3, question_2_ans: 0, question_3_ans: 1, question_4_ans: 0, amount: "10.00", win_amount: "0.00" },
-  { id: 3, user: { name: "Arjun M." }, question_1_ans: 6, question_2_ans: 1, question_3_ans: 0, question_4_ans: 1, amount: "50.00", win_amount: "0.00" },
-];
-
-// ── Hard-coded my bets history ────────────────────────────────────────────────
-const HARD_MY_BETS = [
-  { id: 101, round_id: 5, question_1_ans: 8, question_2_ans: 1, question_3_ans: 1, question_4_ans: 1, amount: "25.00", win_amount: "48.00", loss_amount: "0.00",  created_at: "2026-05-19T10:24:29.000000Z" },
-  { id: 100, round_id: 4, question_1_ans: 3, question_2_ans: 0, question_3_ans: 0, question_4_ans: 0, amount: "10.00", win_amount: "0.00",  loss_amount: "10.00", created_at: "2026-05-19T09:10:00.000000Z" },
-  { id: 99,  round_id: 3, question_1_ans: 7, question_2_ans: 1, question_3_ans: 1, question_4_ans: 0, amount: "5.00",  win_amount: "0.60",  loss_amount: "4.40",  created_at: "2026-05-18T14:33:00.000000Z" },
-];
-
-const AMOUNT_STEP = 5;
-const AMOUNT_MIN  = 5;
-const AMOUNT_MAX  = 500;
-
-const RANK_ICONS = ["🥇", "🥈", "🥉"];
-
-export default function Home() {
-  // ── UI State ──────────────────────────────────────────────────────────────
-  const [selectedRoom, setRoom]     = useState("standard");
-  const [exactNum,     setExactNum] = useState(null);
-  const [bigSmall,     setBigSmall] = useState(null);
-  const [oddEven,      setOddEven]  = useState(null);
-  const [riseFall,     setRiseFall] = useState(null);
-  const [amount,       setAmount]   = useState(5);
-  const [change,       setChange]   = useState({ val: 110.65, pct: 0.21, up: true });
-  const [betSuccess,   setBetSuccess] = useState(false);
-  
-   const [roundClosed, setRoundClosed] = useState(false);
-  const [timerStarted, setTimerStarted] = useState(false);
-  const ROUND_DURATION = 180; // seconds — change as needed
-  const [currentRoundId, setCurrentRoundId] = useState(null);
-  const [roundEndTime,   setRoundEndTime]   = useState(null);
-  const [poolTotal, setPoolTotal] = useState("0.00");
-  const [liveBtcPrice, setLiveBtcPrice] = useState(103284);
-  const [myBets,       setMyBets]       = useState([]);
-const [myBetsTotal,  setMyBetsTotal]  = useState(0);
-const [roundBets,    setRoundBets]    = useState([]);
-const [roundBetsPool, setRoundBetsPool] = useState("0.00");
-const [betsLoading,  setBetsLoading]  = useState(false);
-
-  const timerRef   = useRef(null);
-  const minsRef    = useRef(null);  // direct DOM update — no re-render
-  const secsRef    = useRef(null);
-  const timerRowRef = useRef(null);
-   const timeLeftRef = useRef(0); // starts at 0 — timer off
-  const [betLoading, setBetLoading] = useState(false);
-  const handlePriceUpdate = useCallback((p) => {
-  setLiveBtcPrice(p);
-}, []);
-
-const handleRoundBets = useCallback(async (roundId) => {
-  if (!roundId) return;
-  setBetsLoading(true);
-  try {
-    const tokenType  = localStorage.getItem("cpx_token_type") || "Bearer";
-    const tokenValue = localStorage.getItem("cpx_token") || "";
-    const authToken  = `${tokenType} ${tokenValue}`;
-
-    const res = await fetch(`${BASE}/round-bets/${roundId}`, {
-      headers: { Accept: "application/json", Authorization: authToken },
-    });
-    if (!res.ok) return;
-    const json = await res.json();
-    if (json.status && json.round) {
-      setRoundBets(json.round.bets || []);
-      setRoundBetsPool(json.round.total_pool_amount || "0.00");
-    }
-  } catch (err) {
-    console.error("Round bets error:", err);
-  } finally {
-    setBetsLoading(false);
-  }
-}, []);
-
-const handleMyBets = useCallback(async () => {
-  try {
-    const tokenType  = localStorage.getItem("cpx_token_type") || "Bearer";
-    const tokenValue = localStorage.getItem("cpx_token") || "";
-    const authToken  = `${tokenType} ${tokenValue}`;
-
-    const res = await fetch(`${BASE}/my-bets`, {
-      headers: { Accept: "application/json", Authorization: authToken },
-    });
-    if (!res.ok) return;
-    const json = await res.json();
-    if (json.status) {
-      setMyBets(json.bets || []);
-      setMyBetsTotal(json.total_bets || 0);
-    }
-  } catch (err) {
-    console.error("My bets error:", err);
-  }
-}, []);
-// ── Fetch current round ───────────────────────────────────────────────────────
-const handleCurrentRound = useCallback(async () => {
-  try {
-    const tokenType  = localStorage.getItem("cpx_token_type") || "Bearer";
-    const tokenValue = localStorage.getItem("cpx_token") || "";
-    const authToken  = `${tokenType} ${tokenValue}`;
-
-    const res = await fetch(`${BASE}/current-round`, {
-      headers: { Accept: "application/json", Authorization: authToken },
-    });
-    if (!res.ok) return;
-    const json = await res.json();
-    if (json.status && json.data) {
-  setCurrentRoundId(json.data.id);
-  setPoolTotal(json.data.amount || "0.00");
-  const secs = Math.max(0, Math.floor(json.data.remaining_seconds || 0));
-  timeLeftRef.current = secs;
-  if (json.data.end_time) setRoundEndTime(json.data.end_time);
-
-  // ✅ YEH ADD KARO — backend time milte hi timer start
-  if (secs > 0) {
-    setTimerStarted(true);
-  }
-
-  handleRoundBets(json.data.id);
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function useToast() {
+  const [toasts, setToasts] = useState([]);
+  const addToast = useCallback((message, type = "error") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+  }, []);
+  const removeToast = useCallback(
+    (id) => setToasts((prev) => prev.filter((t) => t.id !== id)),
+    []
+  );
+  return { toasts, addToast, removeToast };
 }
-  } catch (err) {
-    console.error("Fetch error:", err);
-  }
-}, [handleRoundBets]);
 
+function ToastContainer({ toasts, onRemove }) {
+  if (!toasts.length) return null;
+  return (
+    <div className="toast-container">
+      {toasts.map((t) => (
+        <div key={t.id} className={`toast toast-${t.type}`}>
+          <span className="toast-icon r-icon r-icon-sm">
+            {t.type === "error"   ? <FiAlertTriangle /> :
+             t.type === "success" ? <FiCheckCircle  /> :
+                                    <TbInfoCircle   />}
+          </span>
+          <span className="toast-msg">{t.message}</span>
+          <button className="toast-close" onClick={() => onRemove(t.id)}>✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-useEffect(() => {
-  handleCurrentRound().then(() => {
+// ─── Static deco SVG lines ────────────────────────────────────────────────────
+function HeroDeco() {
+  return (
+    <svg className="pool-hero-deco" viewBox="0 0 110 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 80 C15 70 20 60 30 55 C40 50 45 58 55 48 C65 38 68 25 78 20 C88 15 95 22 105 10"
+        stroke="#ea9c1e" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M5 85 C15 78 22 68 35 63 C48 58 52 66 62 56 C72 46 74 33 84 28 C94 23 100 30 108 18"
+        stroke="#ea9c1e" strokeWidth="0.8" strokeLinecap="round" fill="none" opacity="0.5" />
+      <circle cx="105" cy="10" r="3" fill="#ea9c1e" opacity="0.8" />
+      <circle cx="30"  cy="55" r="2" fill="#ea9c1e" opacity="0.5" />
+      <circle cx="55"  cy="48" r="2" fill="#ea9c1e" opacity="0.5" />
+    </svg>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function Home() {
+  const { toasts, addToast, removeToast } = useToast();
+
+  const [exactNum, setExactNum] = useState(null);
+  const [bigSmall, setBigSmall] = useState(null);
+  const [oddEven,  setOddEven]  = useState(null);
+  const [riseFall, setRiseFall] = useState(null);
+
+  const [baseAmount, setBaseAmount] = useState(null);
+  const [amount,     setAmount]     = useState(null);
+
+  const [liveBtcPrice, setLiveBtcPrice] = useState(103284.0);
+  const [change, setChange] = useState({ val: 0, pct: 0, up: true });
+  const liveBtcPriceRef = useRef(103284.0);
+
+  const [currentRoundId,  setCurrentRoundId]  = useState(null);
+  const [poolTotal,       setPoolTotal]        = useState("0.00");
+  const [timerStarted,    setTimerStarted]     = useState(false);
+  const [roundClosed,     setRoundClosed]      = useState(false);
+  const [betLoading,      setBetLoading]       = useState(false);
+  const [betPlaced,       setBetPlaced]        = useState(false);
+  const [betSuccess,      setBetSuccess]       = useState(false);
+
+  const [isUpcoming,       setIsUpcoming]      = useState(false);
+  const [upcomingStartsIn, setUpcomingStartsIn]= useState(0);
+
+  const [checkResultLoading, setCheckResultLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+
+  const [profile,      setProfile]       = useState(null);
+
+  const [myBets,       setMyBets]        = useState([]);
+  const [myBetsTotal,  setMyBetsTotal]   = useState(0);
+  const [roundBets,    setRoundBets]     = useState([]);
+  const [roundBetsPool,setRoundBetsPool] = useState("0.00");
+  const [betsLoading,  setBetsLoading]   = useState(false);
+
+  const [winners, setWinners] = useState([]);
+
+  const minsRef               = useRef(null);
+  const secsRef               = useRef(null);
+  const timerRowRef           = useRef(null);
+  const timerRef              = useRef(null);
+  const upcomingTimerRef      = useRef(null);
+  const timeLeftRef           = useRef(0);
+  const currentRoundIdRef     = useRef(null);
+  const handleCurrentRoundRef = useRef(null);
+
+  const allSelected  = exactNum !== null && bigSmall && oddEven && riseFall;
+  const amountLoaded = baseAmount !== null && amount !== null;
+  const betDisabled  = !allSelected || betLoading || roundClosed || !amountLoaded || betPlaced || isUpcoming;
+
+  const upcomingMins = String(Math.floor(upcomingStartsIn / 60)).padStart(2, "0");
+  const upcomingSecs = String(upcomingStartsIn % 60).padStart(2, "0");
+
+  const lastDigit = Math.floor((liveBtcPrice * 100) % 10);
+
+  const formattedPrice = Number(liveBtcPrice).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
-  handleMyBets();
-}, [handleCurrentRound, handleMyBets]);
 
-  // ── Countdown timer — updates DOM directly, zero re-renders ─────────────────
-useEffect(() => {
-    if (!timerStarted) return; // don't run until bet placed
+  // ── API helpers ────────────────────────────────────────────────────────────
+  const handlePriceUpdate = useCallback((p) => {
+    setLiveBtcPrice(p);
+    liveBtcPriceRef.current = p;
+  }, []);
+
+  const fetchBinancePrice = useCallback(async () => {
+    try {
+      const res  = await fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const price  = parseFloat(data.lastPrice          ?? 0);
+      const absChg = parseFloat(data.priceChange        ?? 0);
+      const pctChg = parseFloat(data.priceChangePercent ?? 0);
+      if (price > 0) {
+        handlePriceUpdate(price);
+        setChange({ val: Math.abs(absChg).toFixed(2), pct: Math.abs(pctChg).toFixed(2), up: pctChg >= 0 });
+      }
+    } catch (err) {
+      // Primary endpoint failed — try fallback silently (price is non-critical, no toast needed)
+      console.warn("[BTC Price] Primary fetch failed:", err.message);
+      try {
+        const r2 = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
+        const d2 = await r2.json();
+        if (d2.price) handlePriceUpdate(parseFloat(d2.price));
+      } catch (fallbackErr) {
+        // Both price feeds failed — stale price shown, user not disturbed (auto-retries every 5s)
+        console.error("[BTC Price] Fallback also failed:", fallbackErr.message);
+      }
+    }
+  }, [handlePriceUpdate]);
+
+  const fetchWinners = useCallback(async (roundId) => {
+    if (!roundId) return;
+    try {
+      const res  = await fetch(`${BASE}/round-bets/${roundId}`, {
+        headers: { Accept: "application/json", Authorization: getToken() },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.status && json.round?.bets) {
+        const list = json.round.bets
+          .filter((b) => parseFloat(b.win_amount ?? 0) > 0)
+          .sort((a, b) => parseFloat(b.win_amount) - parseFloat(a.win_amount))
+          .map((b, i) => ({
+            name: b.user?.name || "Anonymous",
+            amt:  `+${parseFloat(b.win_amount).toFixed(2)} USDT`,
+            iconComp: WINNER_ICONS_COMP[i % WINNER_ICONS_COMP.length],
+          }));
+        if (list.length > 0) setWinners(list);
+      }
+    } catch (err) {
+      // Winners ticker is decorative — log but don't interrupt the user
+      console.warn("[Winners] Failed to fetch:", err.message);
+    }
+  }, []);
+
+  const handleRoundBets = useCallback(async (roundId) => {
+    if (!roundId) return;
+    setBetsLoading(true);
+    try {
+      const res  = await fetch(`${BASE}/round-bets/${roundId}`, {
+        headers: { Accept: "application/json", Authorization: getToken() },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.status && json.round) {
+        setRoundBets(json.round.bets                ?? []);
+        setRoundBetsPool(json.round.total_pool_amount ?? "0.00");
+        const list = (json.round.bets ?? [])
+          .filter((b) => parseFloat(b.win_amount ?? 0) > 0)
+          .sort((a, b) => parseFloat(b.win_amount) - parseFloat(a.win_amount))
+          .map((b, i) => ({ name: b.user?.name || "Anonymous", amt: `+${parseFloat(b.win_amount).toFixed(2)} USDT`, iconComp: WINNER_ICONS_COMP[i % WINNER_ICONS_COMP.length] }));
+        if (list.length > 0) setWinners(list);
+      }
+    } catch (err) {
+      console.error("[Round Bets] Fetch failed:", err.message);
+      // Don't show toast — this runs in background polling, not triggered by user action
+    } finally {
+      setBetsLoading(false);
+    }
+  }, []);
+
+  const handleMyBets = useCallback(async () => {
+    try {
+      const res  = await fetch(`${BASE}/my-bets`, {
+        headers: { Accept: "application/json", Authorization: getToken() },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.status) {
+        setMyBets(json.bets       ?? []);
+        setMyBetsTotal(json.total_bets ?? 0);
+      }
+    } catch (err) {
+      // Polled silently — avoid spamming toasts every 5s if network is weak
+      console.warn("[My Bets] Fetch failed:", err.message);
+    }
+  }, []);
+
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const res  = await fetch(`${BASE}/dashboard`, {
+        headers: { Accept: "application/json", Authorization: getToken() },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.success) setDashboardData(json.data ?? null);
+    } catch (err) {
+      // Dashboard stats are supplementary — polled every 5s, no toast on transient failures
+      console.warn("[Dashboard] Fetch failed:", err.message);
+    }
+  }, []);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res  = await fetch(`${BASE}/profile`, {
+        headers: { Accept: "application/json", Authorization: getToken() },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.status) setProfile(json.data ?? null);
+    } catch (err) {
+      console.error("[Profile] Fetch failed:", err.message);
+      // Only toast on initial load (profile will be null, UI shows fallback values)
+      addToast("Could not load profile. Please refresh.", "error");
+    }
+  }, [addToast]);
+
+  // ── Timer helpers ──────────────────────────────────────────────────────────
+  const startTimer = useCallback((secs) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timeLeftRef.current = secs;
+    if (minsRef.current) minsRef.current.textContent = String(Math.floor(secs/60)).padStart(2,"0");
+    if (secsRef.current) secsRef.current.textContent = String(secs % 60).padStart(2,"0");
+    if (secs <= 0) { setRoundClosed(true); return; }
+    setRoundClosed(false);
+    setTimerStarted(true);
+  }, []);
+
+  const startUpcomingTimer = useCallback((secs) => {
+    if (upcomingTimerRef.current) clearInterval(upcomingTimerRef.current);
+    let left = Math.max(0, Math.floor(secs));
+    setUpcomingStartsIn(left);
+    if (left <= 0) return;
+    upcomingTimerRef.current = setInterval(() => {
+      left -= 1;
+      setUpcomingStartsIn(left);
+      if (left <= 0) { clearInterval(upcomingTimerRef.current); handleCurrentRoundRef.current?.(); }
+    }, 1000);
+  }, []);
+
+  // ── Current round ──────────────────────────────────────────────────────────
+  const handleCurrentRound = useCallback(async () => {
+    try {
+      const res  = await fetch(`${BASE}/current-round`, {
+        headers: { Accept: "application/json", Authorization: getToken() },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+
+      if (!json.status && json.upcoming) {
+        const upcoming = json.upcoming;
+        setIsUpcoming(true);
+        setCurrentRoundId(upcoming.id);
+        startUpcomingTimer(upcoming.starts_in_seconds ?? 0);
+        if (timerRef.current) clearInterval(timerRef.current);
+        setTimerStarted(false);
+        setRoundClosed(false);
+        if (minsRef.current) minsRef.current.textContent = "00";
+        if (secsRef.current) secsRef.current.textContent = "00";
+        return;
+      }
+
+      if (json.status && json.data) {
+        setIsUpcoming(false);
+        if (upcomingTimerRef.current) clearInterval(upcomingTimerRef.current);
+
+        const newRoundId = json.data.id;
+        const isNewRound = currentRoundIdRef.current !== newRoundId;
+        currentRoundIdRef.current = newRoundId;
+        setCurrentRoundId(newRoundId);
+
+        const rawAmt = json.data.amount ?? "0.00";
+        setPoolTotal(rawAmt);
+
+        const parsed = parseFloat(rawAmt || "5");
+        const base   = Math.max(1, Number.isInteger(parsed) ? parsed : Math.round(parsed));
+
+        setBaseAmount((prev) => (prev === null || isNewRound ? base : prev));
+        setAmount((prev) => {
+          if (prev === null || isNewRound) return base;
+          if (prev % base !== 0) return base;
+          return prev;
+        });
+
+        const secs = Math.max(0, Math.floor(json.data.remaining_seconds ?? 0));
+
+        if (isNewRound) {
+          startTimer(secs);
+          handleRoundBets(newRoundId);
+          fetchWinners(newRoundId);
+          setExactNum(null); setBigSmall(null); setOddEven(null); setRiseFall(null);
+          setBetPlaced(false);
+        } else {
+          if (Math.abs(timeLeftRef.current - secs) > 3) startTimer(secs);
+        }
+      }
+    } catch (err) {
+      // Current round is critical — but polled every 5s, so one failure is recoverable
+      console.error("[Current Round] Fetch failed:", err.message);
+      // Only notify if it's a auth/server error (not just a momentary connectivity blip)
+      if (err.message.includes("401") || err.message.includes("403")) {
+        addToast("Session expired. Please log in again.", "error");
+      }
+    }
+  }, [handleRoundBets, fetchWinners, startTimer, startUpcomingTimer, addToast]);
+
+  const handleCheckResult = useCallback(async () => {
+    if (!currentRoundId) return;
+    setCheckResultLoading(true);
+    try {
+      const res  = await fetch(`${BASE}/auto-declare-result`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: getToken() },
+        body: JSON.stringify({ round_id: currentRoundId }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.already_declared) {
+        addToast("Result already declared for this round.", "info");
+      } else if (json.success) {
+        const price = Number(json.winning_number).toLocaleString("en-US", { minimumFractionDigits: 2 });
+        addToast(`Result declared! Winning price: $${price} · Digit: ${json.winning_digit}`, "success");
+        handleRoundBets(currentRoundId);
+        fetchWinners(currentRoundId);
+        handleMyBets();
+      } else {
+        addToast(json.message || "Failed to declare result.", "error");
+      }
+    } catch (err) {
+      console.error("[Check Result] Failed:", err.message);
+      addToast("Network error. Please try again.", "error");
+    } finally {
+      setCheckResultLoading(false);
+    }
+  }, [currentRoundId, addToast, handleRoundBets, fetchWinners, handleMyBets]);
+
+  const handlePlaceBet = useCallback(async () => {
+    if (!allSelected || !currentRoundId || amount === null) return;
+    setBetLoading(true);
+    setBetSuccess(false);
+    try {
+      const body = {
+        round_id:       currentRoundId,
+        amount:         amount,
+        question_1_ans: exactNum,
+        question_2_ans: bigSmall  === "big"  ? 0 : 1,
+        question_3_ans: oddEven   === "odd"  ? 0 : 1,
+        question_4_ans: riseFall  === "rise" ? 0 : 1,
+      };
+      const res  = await fetch(`${BASE}/place-bet`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: getToken() },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.status) {
+        setBetSuccess(true);
+        setBetPlaced(true);
+        addToast("Bet placed successfully!", "success");
+        handleMyBets();
+        handleRoundBets(currentRoundId);
+        setTimeout(() => {
+          setBetSuccess(false);
+          setExactNum(null); setBigSmall(null); setOddEven(null); setRiseFall(null);
+          setAmount(baseAmount ?? 5);
+        }, 3000);
+      } else {
+        addToast(json.message || "Bet failed. Please try again.", "error");
+      }
+    } catch (err) {
+      console.error("[Place Bet] Failed:", err.message);
+      addToast("Network error. Please try again.", "error");
+    } finally {
+      setBetLoading(false);
+    }
+  }, [allSelected, currentRoundId, amount, exactNum, bigSmall, oddEven, riseFall, baseAmount, addToast, handleMyBets, handleRoundBets]);
+
+  // ── Effects ────────────────────────────────────────────────────────────────
+  useEffect(() => { handleCurrentRoundRef.current = handleCurrentRound; }, [handleCurrentRound]);
+
+  useEffect(() => {
+    if (!timerStarted) return;
     const tick = () => {
       const t = timeLeftRef.current;
       if (t <= 1) {
         timeLeftRef.current = 0;
         if (minsRef.current) minsRef.current.textContent = "00";
         if (secsRef.current) secsRef.current.textContent = "00";
-        setRoundClosed(true);     // lock UI
-        clearInterval(timerRef.current); // stop ticking
+        setRoundClosed(true);
+        setTimerStarted(false);
+        clearInterval(timerRef.current);
         return;
       }
       timeLeftRef.current = t - 1;
-      const m = String(Math.floor(timeLeftRef.current / 60)).padStart(2, "0");
-      const s = String(timeLeftRef.current % 60).padStart(2, "0");
-      if (minsRef.current) minsRef.current.textContent = m;
-      if (secsRef.current) secsRef.current.textContent = s;
+      if (minsRef.current) minsRef.current.textContent = String(Math.floor(timeLeftRef.current/60)).padStart(2,"0");
+      if (secsRef.current) secsRef.current.textContent = String(timeLeftRef.current % 60).padStart(2,"0");
       if (timerRowRef.current) {
         timerRowRef.current.classList.add("timer-pulse");
         setTimeout(() => timerRowRef.current?.classList.remove("timer-pulse"), 300);
@@ -189,620 +499,608 @@ useEffect(() => {
     };
     timerRef.current = setInterval(tick, 1000);
     return () => clearInterval(timerRef.current);
-  }, [timerStarted]); // re-runs only when timer is kicked off
+  }, [timerStarted]);
 
-  // ── Amount helpers ────────────────────────────────────────────────────────
-  const increaseAmount = () => setAmount((prev) => Math.min(prev + AMOUNT_STEP, AMOUNT_MAX));
-  const decreaseAmount = () => setAmount((prev) => Math.max(prev - AMOUNT_STEP, AMOUNT_MIN));
-
-  // ── Derived ───────────────────────────────────────────────────────────────
-  const allSelected = exactNum !== null && bigSmall && oddEven && riseFall;
-  const initMins = "00";
-  const initSecs = "00";
-
-  // ── Fake place bet ────────────────────────────────────────────────────────
- const handlePlaceBet = useCallback(async () => {
-  if (!allSelected || !currentRoundId) return;
-
-  setBetLoading(true);
-  setBetSuccess(false);
-
-  try {
-    const tokenType  = localStorage.getItem("cpx_token_type") || "Bearer";
-    const tokenValue = localStorage.getItem("cpx_token") || "";
-    const authToken  = `${tokenType} ${tokenValue}`;
-
-    // question_2_ans: big=0(High), small=1(Low) — DB schema: 0=Big,1=Small
-    // question_3_ans: odd=0, even=1 — DB schema: 0=Odd,1=Even
-    // question_4_ans: rise=0, fall=1 — DB schema: 0=Rise,1=Fall
-    const body = {
-      round_id:       currentRoundId,
-      amount:         amount,
-      question_1_ans: exactNum,
-      question_2_ans: bigSmall === "big" ? 0 : 1,
-      question_3_ans: oddEven  === "odd" ? 0 : 1,
-      question_4_ans: riseFall === "rise" ? 0 : 1,
-    };
-
-    const res = await fetch(`${BASE}/place-bet`, {
-      method:  "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept:         "application/json",
-        Authorization:  authToken,
-      },
-      body: JSON.stringify(body),
-    });
-
-    const json = await res.json();
-
-    if (json.status) {
-       
-      setBetSuccess(true);
+  useEffect(() => {
+    if (!roundClosed) return;
+    const t = setTimeout(() => {
+      setBetPlaced(false);
+      if (currentRoundId) fetchWinners(currentRoundId);
+      handleCurrentRound();
       handleMyBets();
-handleRoundBets(currentRoundId);
-      // 3 sec baad reset
-      setTimeout(() => {
-        setBetSuccess(false);
-        // selections reset
-        setExactNum(null);
-        setBigSmall(null);
-        setOddEven(null);
-        setRiseFall(null);
-        setAmount(5);
-      }, 3000);
-    } else {
-      alert(json.message || "Bet failed. Please try again.");
-    }
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [roundClosed, currentRoundId, fetchWinners, handleCurrentRound, handleMyBets]);
 
-  } catch (err) {
-    console.error("Place bet error:", err);
-    alert("Network error. Please try again.");
-  } finally {
-    setBetLoading(false);
-  }
-}, [allSelected, currentRoundId, amount, exactNum, bigSmall, oddEven, riseFall]);
+  useEffect(() => {
+    if (currentRoundId) fetchWinners(currentRoundId);
+  }, [currentRoundId, fetchWinners]);
 
+  useEffect(() => {
+    handleCurrentRound();
+    handleMyBets();
+    fetchBinancePrice();
+    fetchDashboard();
+    fetchProfile();
+    const poll      = setInterval(() => { handleCurrentRound(); handleMyBets(); fetchDashboard(); }, POLL_INTERVAL);
+    const pricePoll = setInterval(fetchBinancePrice, 5000);
+    return () => {
+      clearInterval(poll);
+      clearInterval(pricePoll);
+      if (upcomingTimerRef.current) clearInterval(upcomingTimerRef.current);
+    };
+  }, [handleCurrentRound, handleMyBets, fetchBinancePrice, fetchDashboard, fetchProfile]);
+
+  // ── Winners display ────────────────────────────────────────────────────────
+  const defaultWinners = [
+    { name: "Be the first winner!", amt: "", iconComp: <TbTrophy /> },
+    { name: "Place your prediction", amt: "", iconComp: <FiZap /> },
+    { name: "Win big rewards", amt: "", iconComp: <PiCoinVerticalDuotone /> },
+  ];
+  const winnersDisplay =
+    winners.length > 0
+      ? [...winners, ...winners]
+      : [...defaultWinners, ...defaultWinners];
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="outer">
-      <div className="bg-grid" />
-      <div className="bg-orb-1" />
-      <div className="bg-orb-2" />
-      <div className="bg-orb-3" />
+    <div className="home-page">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
-      <div className="phone">
-        <main className="main">
-
-          {/* ── HERO BANNER ── */}
-          <div className="hero-banner">
-            <div className="hero-left">
-              <div className="hero-tag">
-                <span>⚡</span>
-                <span>SKILL-BASED PREDICTION</span>
-              </div>
-              <h1 className="hero-h1">
-                <span className="g1">Where Strategy</span><br />
-                <span className="g2">Meets Opportunity.</span>
-              </h1>
-              <p className="hero-sub">
-                Join elite crypto prediction pools and compete for real rewards.
-              </p>
-              <div className="hero-btns">
-                <button className="btn-gold">🚀 JOIN POOL</button>
-                <button className="btn-outline">🏆 LEADERBOARD</button>
-              </div>
-            </div>
-            <div className="hero-center">
-              <div className="hero-img-wrap">
-                <div className="hero-ring-1" />
-                <div className="hero-ring-2" />
-                <div className="hero-ring-3" />
-                <div className="hero-glow-blob" />
-                <span className="pdot pdot-1" />
-                <span className="pdot pdot-2" />
-                <span className="pdot pdot-3" />
-                <span className="pdot pdot-4" />
-                <img src={BTC_IMAGE_URL} alt="CoinPool X" className="hero-img" draggable={false} />
-              </div>
-              <div className="hero-price-badge">
-                <span className="pv">
-                  ${liveBtcPrice.toLocaleString("en-US", { maximumFractionDigits: 0 })}
-                </span>
-                <span className="pc">USDT</span>
-              </div>
-              {/* <SparkChart onPriceUpdate={handlePriceUpdate} /> */}
-            </div>
-          </div>
-
-          {/* ── LIVE TICKER ── */}
-          <div className="ticker-bar">
-            <span className="ticker-label">LIVE</span>
-            <div className="ticker-track">
-              <TickerTape />
-            </div>
-          </div>
-
-          {/* ── STATS ROW ── */}
-          <div className="stats-row">
-            <div className="stat-card" style={{ "--stat-color": "#FFD700" }}>
-              <span className="stat-icon">💰</span>
-              <span className="stat-val">$84K+</span>
-              <span className="stat-lbl">PRIZE POOL</span>
-            </div>
-            <div className="stat-card" style={{ "--stat-color": "#00D4FF" }}>
-              <span className="stat-icon">👥</span>
-              <span className="stat-val">3,424</span>
-              <span className="stat-lbl">ACTIVE PLAYERS</span>
-            </div>
-            <div className="stat-card" style={{ "--stat-color": "#00FFB2" }}>
-              <span className="stat-icon">🏆</span>
-              <span className="stat-val">80%</span>
-              <span className="stat-lbl">POOL SHARE</span>
-            </div>
-          </div>
-
-          {/* ── RECENT WINNERS ── */}
-          <div className="winners-ticker">
-            <span className="winners-label">🎉 WINNERS</span>
-            <div className="winners-track">
-              {[...WINNERS, ...WINNERS].map((w, i) => (
-                <div key={i} className="winner-item">
-                  <span className="winner-icon">{w.icon}</span>
-                  <span className="winner-name">{w.name}</span>
-                  <span className="winner-amt">{w.amt}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── ROOM SELECTOR ── */}
-          <div className="section-label">
-            <div className="section-line" />
-            <span className="section-text">SELECT ROOM</span>
-            <div className="section-line" />
-          </div>
-          <div className="room-row">
-            {ROOMS.map((r) => (
-              <button
-                key={r.id}
-                className={`room-card ${selectedRoom === r.id ? "room-active" : ""}`}
-                style={{ "--rc": r.color }}
-                onClick={() => setRoom(r.id)}
-              >
-                <div className="room-glow" />
-                {r.badge && <span className="room-badge">{r.badge}</span>}
-                <span className="room-icon">{r.icon}</span>
-                <span className="room-label">{r.label}</span>
-                <span className="room-fee-label">ENTRY FEE</span>
-                <span className="room-fee">{r.fee} USDT</span>
-                <span className="room-playing">👥 {r.playing.toLocaleString()} PLAYING</span>
-              </button>
-            ))}
-          </div>
-
-          {/* ── ROUND CARD ── */}
-          <div className="round-card" style={{ marginBottom: 14 }}>
-            <div className="round-inner">
-              <div className="round-left">
-                <div className="round-num-row">
-                  <span className="round-lbl">ROUND</span>
-                  <span className="round-num">{currentRoundId ? "#" + String(currentRoundId).padStart(5, "0") : "#------"}</span>
-                  <button className="copy-btn">⧉</button>
-                </div>
-
-                <div className="closes-label">ROUND CLOSES IN</div>
-                <div className="timer-row" ref={timerRowRef}>
-                  <div className="timer-block">
-                    <span className="timer-digit" ref={minsRef}>{initMins}</span>
-                    <span className="timer-unit">MIN</span>
-                  </div>
-                  <span className="timer-colon">:</span>
-                  <div className="timer-block">
-                    <span className="timer-digit" ref={secsRef}>{initSecs}</span>
-                    <span className="timer-unit">SEC</span>
-                  </div>
-                </div>
-
-                <div className="price-section">
-                  <div className="price-lbl">BTC CLOSE PRICE</div>
-                  <div className="price-val">
-                    {liveBtcPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                    <span className="price-cur"> USDT</span>
-                  </div>
-                  <div className="change-row">
-                    <span className="change-lbl">24H</span>
-                    <span className={change.up ? "change-up" : "change-dn"}>
-                      {change.up ? "+" : "-"}{change.val} ({change.pct}%) {change.up ? "▲" : "▼"}
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 10 }}>
-                  <div className="price-lbl">POOL TOTAL</div>
-                  <div style={{ fontFamily: "var(--font-m)", fontSize: 13, color: "var(--gold)", fontWeight: 700 }}>
-                    ${parseFloat(poolTotal).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="round-right">
-                <button className="how-btn">▶ How it works?</button>
-                <div className="btc-img-wrap">
-                  <div className="btc-ring-o" />
-                  <div className="btc-ring-m" />
-                  <div className="btc-ring-i" />
-                  <div className="btc-glow" />
-                  <img src={BTC_IMAGE_URL} alt="Bitcoin" className="btc-real-img" draggable={false} />
-                </div>
-                <div className="btc-price-badge">
-                  <span className="btc-badge-val">
-                    ${liveBtcPrice.toLocaleString("en-US", { maximumFractionDigits: 0 })}
-                  </span>
-                  <span className="btc-badge-cur">USDT</span>
-                </div>
-                <div style={{ marginTop: 8, textAlign: "right", fontSize: 9, color: "var(--text-muted)", fontFamily: "var(--font-d)", letterSpacing: ".06em" }}>
-                  {roundEndTime ? new Date(roundEndTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── BET AMOUNT CARD ── */}
-          <div className="section-label" style={{ marginTop: 6 }}>
-            <div className="section-line" />
-            <span className="section-text">BET AMOUNT</span>
-            <div className="section-line" />
-          </div>
-
-          <div className="amount-card">
-            <div className="amount-header">
-              <span className="amount-label">CHOOSE YOUR BET</span>
-              <span style={{ fontFamily: "var(--font-m)", fontSize: 10, color: "var(--text-muted)" }}>
-                MIN ${AMOUNT_MIN} · MAX ${AMOUNT_MAX}
-              </span>
-            </div>
-
-            <div className="amount-stepper-row">
-              <button className="stepper-btn stepper-minus" onClick={decreaseAmount} disabled={amount <= AMOUNT_MIN}>−</button>
-              <div className="amount-display-box">
-                <span className="t-icon-lg">$</span>
-                <span className="amount-val-lg">{amount}</span>
-                <span className="amount-cur-lbl">USDT</span>
-              </div>
-              <button className="stepper-btn stepper-plus" onClick={increaseAmount} disabled={amount >= AMOUNT_MAX}>+</button>
-            </div>
-
-            <div className="amount-quick-row">
-              {[5, 10, 25, 50, 100].map((a) => (
-                <button
-                  key={a}
-                  className={`amount-quick-btn ${amount === a ? "amount-quick-active" : ""}`}
-                  onClick={() => setAmount(a)}
-                >
-                  {a}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── MAKE YOUR PREDICTION ── */}
-          <div className="section-label">
-            <div className="section-line" />
-            <span className="section-text">MAKE YOUR PREDICTION</span>
-            <div className="section-line" />
-          </div>
-
-          {/* PRED 1 — EXACT NUMBER */}
-          <div className="pred-card" style={{ "--pc": "#FFD700" }}>
-            <div className="pred-card-glow" />
-            <div className="pred-header">
-              <div className="pred-num" style={{ background: "linear-gradient(135deg,#FFD700,#FF8C00)" }}>1</div>
-              <div className="pred-info">
-                <span className="pred-title">EXACT LAST DIGIT</span>
-                <span className="pred-sub">Pick the last digit of BTC closing price (0–9)</span>
-              </div>
-            </div>
-            <div className="num-grid">
-              {[0,1,2,3,4,5,6,7,8,9].map((n) => (
-                <button
-                  key={n}
-                  className={`num-btn ${exactNum === n ? "num-btn-active" : ""}`}
-                  onClick={() => setExactNum(n)}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* PRED 2 — HIGH / LOW */}
-          <div className="pred-card" style={{ "--pc": "#4A90D9" }}>
-            <div className="pred-card-glow" />
-            <div className="pred-header">
-              <div className="pred-num" style={{ background: "linear-gradient(135deg,#4A90D9,#0062FF)" }}>2</div>
-              <div className="pred-info">
-                <span className="pred-title">HIGH / LOW</span>
-                <span className="pred-sub">Last digit 5–9 = High · 1–4 = Low</span>
-              </div>
-            </div>
-            <div className="toggle-row">
-              {[
-                { id: "big",   label: "HIGH 📈", tc: "rgba(74,144,217,0.75)" },
-                { id: "small", label: "LOW  📉", tc: "rgba(255,77,109,0.75)" },
-              ].map((o) => (
-                <button
-                  key={o.id}
-                  className={`toggle-btn ${bigSmall === o.id ? "toggle-btn-active" : ""}`}
-                  style={{ "--tc": o.tc }}
-                  onClick={() => setBigSmall(o.id)}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* PRED 3 — ODD / EVEN */}
-          <div className="pred-card" style={{ "--pc": "#00D4FF" }}>
-            <div className="pred-card-glow" />
-            <div className="pred-header">
-              <div className="pred-num" style={{ background: "linear-gradient(135deg,#00D4FF,#0062FF)" }}>3</div>
-              <div className="pred-info">
-                <span className="pred-title">ODD / EVEN</span>
-                <span className="pred-sub">Last digit — odd or even?</span>
-              </div>
-            </div>
-            <div className="toggle-row">
-              {[
-                { id: "odd",  label: "ODD 🎯",  tc: "rgba(0,212,255,0.75)" },
-                { id: "even", label: "EVEN 🎰", tc: "rgba(255,215,0,0.75)" },
-              ].map((o) => (
-                <button
-                  key={o.id}
-                  className={`toggle-btn ${oddEven === o.id ? "toggle-btn-active" : ""}`}
-                  style={{ "--tc": o.tc }}
-                  onClick={() => setOddEven(o.id)}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* PRED 4 — RISE / FALL */}
-          <div className="pred-card" style={{ "--pc": "#00FFB2" }}>
-            <div className="pred-card-glow" />
-            <div className="pred-header">
-              <div className="pred-num" style={{ background: "linear-gradient(135deg,#00FFB2,#00A060)" }}>4</div>
-              <div className="pred-info">
-                <span className="pred-title">RISE / FALL</span>
-                <span className="pred-sub">Will BTC close higher or lower than prev slot?</span>
-              </div>
-            </div>
-            <div className="toggle-row">
-              {[
-                { id: "rise", label: "🚀 RISE", tc: "rgba(0,255,178,0.75)" },
-                { id: "fall", label: "💥 FALL", tc: "rgba(255,77,109,0.75)" },
-              ].map((o) => (
-                <button
-                  key={o.id}
-                  className={`toggle-btn ${riseFall === o.id ? "toggle-btn-active" : ""}`}
-                  style={{ "--tc": o.tc }}
-                  onClick={() => setRiseFall(o.id)}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          </div>
-            {roundClosed && (
-    <div style={{background:"rgba(255,77,109,0.1)",border:"1px solid rgba(255,77,109,0.3)",
-      borderRadius:60,padding:"12px 16px",textAlign:"center",fontSize:13,
-      color:"#FF4D6D",fontWeight:700,letterSpacing:0.5}}>
-      🔒 ROUND CLOSED — Awaiting results
-    </div>
-  )}
-
-          {/* ── CONFIRM BUTTON ── */}
-         <button
-  onClick={handlePlaceBet}
-  className={`confirm-btn ${(!allSelected || betLoading || roundClosed) ? "confirm-disabled" : ""}`}
-  disabled={!allSelected || betLoading || roundClosed}
->
-  <div className="confirm-btn-glow" />
-  <span style={{ position: "relative", zIndex: 1 }}>
-    {betLoading
-      ? "PLACING BET..."
-      : betSuccess
-      ? "✓ BET PLACED SUCCESSFULLY!"
-      : `CONFIRM PREDICTION · $${amount}`}
-  </span>
-  {!betSuccess && !betLoading && (
-    <span style={{ position: "relative", zIndex: 1, fontSize: 18, fontWeight: 900 }}>→</span>
-  )}
-</button>
-
-          {/* ── PRIZE DISTRIBUTION ── */}
-          <div className="section-label" style={{ marginTop: 6 }}>
-            <div className="section-line" />
-            <span className="section-text">PRIZE DISTRIBUTION</span>
-            <div className="section-line" />
-          </div>
-
-          <div className="prize-card">
-            <div className="pred-header" style={{ marginBottom: 4 }}>
-              <div className="pred-num" style={{ background: "linear-gradient(135deg,#FFD700,#FF8C00)" }}>💰</div>
-              <div className="pred-info">
-                <span className="pred-title">HOW WINNINGS ARE SPLIT</span>
-                <span className="pred-sub">Automated after result confirmation</span>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,215,0,0.04)", border: "1px solid rgba(255,215,0,0.1)", borderRadius: 10, padding: "8px 14px", marginBottom: 10 }}>
-              <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>TOTAL POOL</span>
-              <span style={{ fontFamily: "var(--font-d)", fontSize: 14, color: "var(--gold)", fontWeight: 700 }}>$85.00</span>
-            </div>
-
-            <div className="prize-row">
-              <div className="prize-item">
-                <div className="prize-pct">80%</div>
-                <div className="prize-lbl">WINNERS</div>
-                <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 4, letterSpacing: 0.3 }}>Shared by correct predictors</div>
-              </div>
-              <div className="prize-item">
-                <div className="prize-pct" style={{ color: "var(--cyan)", textShadow: "0 0 12px rgba(0,212,255,0.4)" }}>15%</div>
-                <div className="prize-lbl">PLATFORM</div>
-                <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 4, letterSpacing: 0.3 }}>Maintenance & ops</div>
-              </div>
-              <div className="prize-item">
-                <div className="prize-pct" style={{ color: "var(--green)", textShadow: "0 0 12px rgba(0,255,178,0.4)" }}>5%</div>
-                <div className="prize-lbl">REFERRAL</div>
-                <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 4, letterSpacing: 0.3 }}>Referrer bonus</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 12, background: "rgba(0,255,178,0.04)", border: "1px solid rgba(0,255,178,0.12)", borderRadius: 10, padding: "10px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-              <span style={{ fontSize: 16 }}>💡</span>
-              <span style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
-                The more predictions you get right, the higher your share of the 80% prize pool. All 4 correct = maximum reward!
-              </span>
-            </div>
-          </div>
-
-                    {/* ── MY BETS (hard-coded) ── */}
-         {/* ── MY BETS ── */}
-<div className="section-label" style={{ marginTop: 6 }}>
-  <div className="section-line" />
-  <span className="section-text">MY BETS</span>
-  <div className="section-line" />
-</div>
-
-<div className="lb-card" style={{ marginBottom: 14 }}>
-  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-    <span style={{ fontFamily: "var(--font-d)", fontSize: 10, color: "var(--cyan)", letterSpacing: 1 }}>YOUR HISTORY</span>
-    <span style={{ fontFamily: "var(--font-m)", fontSize: 11, color: "var(--gold)" }}>{myBetsTotal} TOTAL</span>
-  </div>
-
-  {myBets.length === 0 && (
-    <div style={{ textAlign: "center", padding: "20px 0", color: "var(--text-muted)", fontSize: 12 }}>
-      No bets placed yet
-    </div>
-  )}
-
-  {myBets.map((bet) => {
-    const isWin  = parseFloat(bet.win_amount) > 0;
-    const isLoss = parseFloat(bet.loss_amount) > 0;
-    const isPending = !isWin && !isLoss;
-    return (
-      <div key={bet.id} className="lb-row">
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 36 }}>
-          <span style={{ fontFamily: "var(--font-d)", fontSize: 8, color: "var(--text-muted)", letterSpacing: 0.5 }}>RND</span>
-          <span style={{ fontFamily: "var(--font-m)", fontSize: 12, color: "var(--cyan)", fontWeight: 700 }}>#{bet.round_id}</span>
+      {/* ── GREETING HEADER ─────────────────────────────────────────── */}
+      <div className="home-header">
+        <div className="home-header-left">
+          <span className="home-header-hi">Hi,</span>
+          <span className="home-header-name">
+            {profile?.basic_info?.name
+              ? profile.basic_info.name.split(" ")[0]
+              : "Name"}
+          </span>
         </div>
-        <div className="lb-info">
-          <div className="lb-streak">
-            Digit: {bet.question_1_ans} &middot;{" "}
-            {bet.question_2_ans === 0 ? "HIGH" : "LOW"} &middot;{" "}
-            {bet.question_3_ans === 0 ? "ODD" : "EVEN"} &middot;{" "}
-            {bet.question_4_ans === 0 ? "RISE" : "FALL"}
-          </div>
-          <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 2 }}>
-            {new Date(bet.created_at).toLocaleString()}
-          </div>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontFamily: "var(--font-m)", fontSize: 12, color: "var(--gold)" }}>
-            ${parseFloat(bet.amount).toFixed(2)}
-          </div>
-          {isWin && (
-            <div style={{ fontFamily: "var(--font-m)", fontSize: 11, color: "var(--green)", fontWeight: 700 }}>
-              +${parseFloat(bet.win_amount).toFixed(2)}
-            </div>
-          )}
-          {isLoss && !isWin && (
-            <div style={{ fontFamily: "var(--font-m)", fontSize: 11, color: "var(--red)" }}>
-              -${parseFloat(bet.loss_amount).toFixed(2)}
-            </div>
-          )}
-          {isPending && (
-            <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 2 }}>PENDING</div>
-          )}
+        <div className="home-header-right">
+          <span className="home-header-bal-label">Wallet Balance</span>
+          <span className="home-header-bal-val">
+            ₹{profile?.financial?.total_wallet_balance != null
+              ? Number(profile.financial.total_wallet_balance).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              : "0.00"}
+          </span>
+          <span className="home-header-bal-dot" />
         </div>
       </div>
-    );
-  })}
-</div>
 
-         
-                  {/* ── ROUND PARTICIPANTS ── */}
-          <div className="section-label" style={{ marginTop: 6 }}>
-            <div className="section-line" />
-            <span className="section-text">ROUND PARTICIPANTS</span>
-            <div className="section-line" />
+      {/* ── POOL HERO CARD ──────────────────────────────────────────── */}
+      <div className="pool-hero">
+        <HeroDeco />
+        <div className="pool-hero-chart">
+          {/* <SparkChart color={change.up ? "#ea9c1e" : "#ef4444"} /> */}
+        </div>
+
+        <div className="pool-hero-label">
+          <span className="live-dot" style={{ display: "inline-block", marginRight: 6, verticalAlign: "middle", background: "#ef4444" }} />
+          Live Bitcoin Pool
+        </div>
+
+        <div className="pool-prize-label">Prize Pool</div>
+        <div className="pool-prize-amount">
+          ${parseFloat(dashboardData?.latest_round_pool_amount ?? roundBetsPool).toFixed(2)}
+        </div>
+
+        <div className="pool-meta-row">
+          <span>Entry: <strong>${amountLoaded ? amount : "0.00"} USDT</strong></span>
+          <span>Players: <strong>{dashboardData?.total_active_users ?? "2,450"}</strong></span>
+        </div>
+
+        {/* ── dual timer block — always visible ── */}
+        <div className="hero-timer-block">
+          {/* LEFT — current round countdown */}
+          <div className="hero-timer-col">
+            <span className="hero-timer-label">
+              <FiClock size={11} style={{ marginRight: 4, verticalAlign: "middle" }} />
+              Closes In
+            </span>
+            <div
+              ref={timerRowRef}
+              className={`hero-timer-val${roundClosed ? " round-closed" : ""}`}
+            >
+              <span ref={minsRef}>00</span>
+              <span className="hero-timer-colon">:</span>
+              <span ref={secsRef}>00</span>
+            </div>
+            {roundClosed && (
+              <span className="hero-timer-status red">Round Closed</span>
+            )}
           </div>
 
-          <div className="lb-card" style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontFamily: "var(--font-d)", fontSize: 10, color: "var(--cyan)", letterSpacing: 1 }}>
-                {currentRoundId ? "ROUND #" + String(currentRoundId).padStart(6, "0") : "ROUND 00000"}
-              </span>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: "var(--font-m)", fontSize: 11, color: "var(--gold)" }}>
-                  {roundBets.length} BETS
-                </span>
-                <span style={{ fontFamily: "var(--font-m)", fontSize: 10, color: "var(--green)", background: "rgba(0,255,178,0.07)", border: "1px solid rgba(0,255,178,0.15)", borderRadius: 6, padding: "2px 8px" }}>
-                  Pool ${parseFloat(roundBetsPool).toFixed(2)}
-                </span>
-              </div>
+          {/* divider */}
+          <div className="hero-timer-divider" />
+
+          {/* RIGHT — next round countdown (always shown; dims when not upcoming) */}
+          <div className="hero-timer-col">
+            <span className="hero-timer-label">
+              <FiArrowRight size={11} style={{ marginRight: 4, verticalAlign: "middle" }} />
+              Next Round In
+            </span>
+            <div className={`hero-timer-val${isUpcoming ? "" : " hero-timer-dim"}`}>
+              {isUpcoming ? upcomingMins : "00:00"}
+              <span className="hero-timer-colon">{isUpcoming ? ":" : ""}</span>
+              {isUpcoming ? upcomingSecs : ""}
             </div>
-
-            {betsLoading && (
-              <div style={{ textAlign: "center", padding: "20px 0", color: "var(--text-muted)", fontSize: 12 }}>
-                Loading...
-              </div>
+            {isUpcoming && (
+              <span className="hero-timer-status gold">Get Ready!</span>
             )}
+          </div>
+        </div>
 
-            {!betsLoading && roundBets.length === 0 && (
-              <div style={{ textAlign: "center", padding: "20px 0", color: "var(--text-muted)", fontSize: 12 }}>
-                No participants yet
-              </div>
-            )}
+        <button className="btn-enter-pool" disabled={betDisabled} onClick={handlePlaceBet}>
+          {betLoading
+            ? <><FiLoader className="r-icon r-icon-sm spin-icon" style={{ marginRight: 8 }} /> Placing Bet…</>
+            : betSuccess
+            ? <><FiCheckCircle style={{ marginRight: 8 }} /> Bet Placed!</>
+            : isUpcoming
+            ? <>Opens in {upcomingMins}:{upcomingSecs}</>
+            : <>Enter Pool</>}
+        </button>
+      </div>
 
-            {!betsLoading && roundBets.map((bet, i) => (
+      {/* ── CHECK RESULT ────────────────────────────────────────────── */}
+      {roundClosed && !isUpcoming && (
+        <button
+          className="check-result-btn"
+          onClick={handleCheckResult}
+          disabled={checkResultLoading || !currentRoundId}
+        >
+          <span className="r-icon r-icon-sm" style={{ marginRight: 8 }}>
+            {checkResultLoading ? <FiLoader /> : <TbRefresh />}
+          </span>
+          {checkResultLoading ? "CHECKING..." : "CHECK RESULT"}
+        </button>
+      )}
+
+      {/* ── BTC PRICE + LAST DIGIT ──────────────────────────────────── */}
+      <div className="price-row">
+        <div className="price-card">
+          <span className="price-card-label">
+            <BiBitcoin style={{ marginRight: 4, verticalAlign: "middle", fontSize: 14 }} />
+            BTC / USD
+          </span>
+          <span className="price-card-value">${formattedPrice}</span>
+          <span className={`price-change ${change.up ? "up" : "down"}`}>
+            <span className="r-icon r-icon-sm" style={{ marginRight: 4 }}>
+              {change.up ? <FiTrendingUp /> : <FiTrendingDown />}
+            </span>
+            {change.up ? "+" : "-"}{change.val} ({change.pct}%)
+          </span>
+          <div className="price-chart-area">
+            <SparkChart color={change.up ? "#ea9c1e" : "#ef4444"} />
+          </div>
+        </div>
+
+        <div className="last-digit-card">
+          <span className="last-digit-label">Last Digit</span>
+          <span className="last-digit-value">{lastDigit}</span>
+          <div className="live-badge">
+            <span className="live-dot" />
+            Live Price Feed
+          </div>
+        </div>
+      </div>
+
+      {/* ── DASHBOARD STATS ─────────────────────────────────────────── */}
+      <div className="stats-strip">
+        <div className="stat-card">
+          <div className="stat-label">
+            <TbCurrencyDollar style={{ marginRight: 3, verticalAlign: "middle", fontSize: 11 }} />
+            Prize Pool
+          </div>
+          <div className="stat-value gold">
+            ${parseFloat(dashboardData?.latest_round_pool_amount ?? roundBetsPool).toFixed(2)}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">
+            <TbUsers style={{ marginRight: 3, verticalAlign: "middle", fontSize: 11 }} />
+            Active Players
+          </div>
+          <div className="stat-value cyan">{dashboardData?.total_active_users ?? "—"}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">
+            <TbPercentage style={{ marginRight: 3, verticalAlign: "middle", fontSize: 11 }} />
+            Pool Share
+          </div>
+          <div className="stat-value green">80%</div>
+        </div>
+      </div>
+
+      {/* ── BET AMOUNT ───────────────────────────────────────────────── */}
+      <div className="section-label" style={{ marginTop: 20 }}>
+        <div className="section-line" />
+        <span className="section-text">Bet Amount</span>
+        <div className="section-line" />
+      </div>
+
+      <div className="amount-card">
+        <div className="amount-header">
+          <span className="amount-label">Bet Amount</span>
+          <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600, letterSpacing: 1 }}>
+            FIXED PER ROUND
+          </span>
+        </div>
+        <div className="amount-fixed-display">
+          <div className="amount-fixed-left">
+            <span className="amount-fixed-icon">$</span>
+            <span className="amount-fixed-val">{amountLoaded ? amount : "0.00"}</span>
+            <span className="amount-fixed-cur">USDT</span>
+          </div>
+          <div className="amount-fixed-badge">{amountLoaded ? "SET BY ROUND" : "ROUND"}</div>
+        </div>
+        <div className="amount-fixed-note">
+          <FiZap style={{ marginRight: 6, verticalAlign: "middle", color: "var(--gold)" }} />
+          This round's bet amount is fixed at{" "}
+          <strong style={{ color: "var(--gold)" }}>
+            ${amountLoaded ? amount : "0.00"} USDT
+          </strong>{" "}
+          per prediction
+        </div>
+      </div>
+
+      {/* ── MAKE YOUR PREDICTION ─────────────────────────────────────── */}
+      <div className="section-label">
+        <div className="section-line" />
+        <span className="section-text">Make Your Prediction</span>
+        <div className="section-line" />
+      </div>
+
+      <div className="predictions-wrapper">
+
+      {/* PRED 1 — Exact Last Digit */}
+      <div className="pred-card" style={{ "--pc": "rgba(234,156,30,0.18)" }}>
+        <div className="pred-card-glow" />
+        <div className="pred-header">
+          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
+            <TbCircleNumber1 size={16} />
+          </div>
+          <div className="pred-info">
+            <span className="pred-title">Choose Your Final Digit</span>
+            <span className="pred-sub">Pick the last digit of BTC closing price (0–9)</span>
+          </div>
+        </div>
+        <div className="digit-grid">
+          {[0,1,2,3,4,5,6,7,8,9].map((n) => (
+            <button
+              key={n}
+              className={`digit-btn${exactNum === n ? " active" : ""}`}
+              onClick={() => setExactNum(n)}
+              disabled={roundClosed || betPlaced}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* PRED 2 — Big / Small */}
+      <div className="pred-card" style={{ "--pc": "rgba(234,156,30,0.18)" }}>
+        <div className="pred-card-glow" />
+        <div className="pred-header">
+          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
+            <TbCircleNumber2 size={16} />
+          </div>
+          <div className="pred-info">
+            <span className="pred-title">Big or Small?</span>
+          </div>
+        </div>
+        <div className="choice-pair">
+          <button
+            className={`choice-btn${bigSmall === "big" ? " active" : ""}`}
+            onClick={() => setBigSmall("big")}
+            disabled={roundClosed || betPlaced}
+          >
+            <span className="choice-icon r-icon r-icon-lg"><FiTrendingUp /></span>
+            Big
+          </button>
+          <button
+            className={`choice-btn${bigSmall === "small" ? " active" : ""}`}
+            onClick={() => setBigSmall("small")}
+            disabled={roundClosed || betPlaced}
+          >
+            <span className="choice-icon r-icon r-icon-lg"><FiTrendingDown /></span>
+            Small
+          </button>
+        </div>
+      </div>
+
+      {/* PRED 3 — Odd / Even */}
+      <div className="pred-card" style={{ "--pc": "rgba(234,156,30,0.18)" }}>
+        <div className="pred-card-glow" />
+        <div className="pred-header">
+          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
+            <TbCircleNumber3 size={16} />
+          </div>
+          <div className="pred-info">
+            <span className="pred-title">Odd or Even?</span>
+          </div>
+        </div>
+        <div className="choice-pair">
+          <button
+            className={`choice-btn${oddEven === "odd" ? " active" : ""}`}
+            onClick={() => setOddEven("odd")}
+            disabled={roundClosed || betPlaced}
+          >
+            <span className="choice-icon r-icon r-icon-lg"><RiNumbersLine /></span>
+            Odd
+          </button>
+          <button
+            className={`choice-btn${oddEven === "even" ? " active" : ""}`}
+            onClick={() => setOddEven("even")}
+            disabled={roundClosed || betPlaced}
+          >
+            <span className="choice-icon r-icon r-icon-lg"><RiBarChartGroupedLine /></span>
+            Even
+          </button>
+        </div>
+      </div>
+
+      {/* PRED 4 — Rise / Fall */}
+      <div className="pred-card" style={{ "--pc": "rgba(234,156,30,0.18)" }}>
+        <div className="pred-card-glow" />
+        <div className="pred-header">
+          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
+            <TbCircleNumber4 size={16} />
+          </div>
+          <div className="pred-info">
+            <span className="pred-title">Rise or Fall?</span>
+          </div>
+        </div>
+        <div className="choice-pair">
+          <button
+            className={`choice-btn${riseFall === "rise" ? " active" : ""}`}
+            onClick={() => setRiseFall("rise")}
+            disabled={roundClosed || betPlaced}
+          >
+            <span className="choice-icon r-icon r-icon-lg"><RiRocketLine /></span>
+            Rise
+          </button>
+          <button
+            className={`choice-btn${riseFall === "fall" ? " active" : ""}`}
+            onClick={() => setRiseFall("fall")}
+            disabled={roundClosed || betPlaced}
+          >
+            <span className="choice-icon r-icon r-icon-lg"><MdOutlineWaterDrop /></span>
+            Fall
+          </button>
+        </div>
+      </div>
+
+  
+
+      {/* ── UPCOMING BANNER ──────────────────────────────────────────── */}
+      {isUpcoming && (
+        <div className="upcoming-banner">
+          <FiClock style={{ marginRight: 8, verticalAlign: "middle" }} />
+          ROUND STARTS IN {upcomingMins}:{upcomingSecs} — Get ready!
+        </div>
+      )}
+
+      {/* ── STATUS BANNERS ───────────────────────────────────────────── */}
+      <div className="section">
+        {betSuccess && (
+          <div className="bet-success-banner">
+            <FiCheckCircle style={{ marginRight: 8, verticalAlign: "middle" }} />
+            Bet placed! Good luck
+          </div>
+        )}
+        {roundClosed && !betSuccess && (
+          <div className="round-closed-banner">
+            <FiAlertTriangle style={{ marginRight: 8, verticalAlign: "middle" }} />
+            Round closed
+          </div>
+        )}
+      </div>
+
+      {/* ── CONFIRM BUTTON ───────────────────────────────────────────── */}
+      <button
+        onClick={handlePlaceBet}
+        className={`confirm-btn${betDisabled ? " confirm-disabled" : ""}${betPlaced && !betLoading ? " confirm-bet-placed" : ""}`}
+        disabled={betDisabled}
+      >
+        <div className="confirm-btn-glow" />
+        <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+          {betLoading ? (
+            <><FiLoader className="spin-icon" /> PLACING BET...</>
+          ) : betSuccess ? (
+            <><FiCheckCircle /> BET PLACED SUCCESSFULLY!</>
+          ) : betPlaced ? (
+            <><FiLock /> BET LOCKED — WAITING FOR NEXT ROUND</>
+          ) : isUpcoming ? (
+            <><FiClock /> OPENS IN {upcomingMins}:{upcomingSecs}</>
+          ) : (
+            <>CONFIRM PREDICTION · ${amountLoaded ? amount : "—"}</>
+          )}
+        </span>
+        {!betSuccess && !betLoading && !betPlaced && !isUpcoming && (
+          <span style={{ position: "relative", zIndex: 1 }}>
+            <FiArrowRight size={18} />
+          </span>
+        )}
+      </button>
+
+          </div>
+
+      {/* ── PRIZE DISTRIBUTION ───────────────────────────────────────── */}
+      <div className="section-label" style={{ marginTop: 20 }}>
+        <div className="section-line" />
+        <span className="section-text">Prize Distribution</span>
+        <div className="section-line" />
+      </div>
+
+      <div className="prize-card">
+        <div className="pred-header" style={{ marginBottom: 4 }}>
+          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
+            <TbCurrencyDollar size={16} />
+          </div>
+          <div className="pred-info">
+            <span className="pred-title">How Winnings Are Split</span>
+            <span className="pred-sub">Automated after result confirmation</span>
+          </div>
+        </div>
+        <div className="prize-pool-row">
+          <span className="prize-pool-lbl">Total Pool</span>
+          <span className="prize-pool-val">${parseFloat(poolTotal).toFixed(2)}</span>
+        </div>
+        <div className="prize-row">
+          <div className="prize-item">
+            <div className="prize-pct">80%</div>
+            <div className="prize-lbl">Winners</div>
+            <div className="prize-sub">Shared by correct predictors</div>
+          </div>
+          <div className="prize-item">
+            <div className="prize-pct" style={{ color: "#4A90D9" }}>15%</div>
+            <div className="prize-lbl">Platform</div>
+            <div className="prize-sub">Maintenance & ops</div>
+          </div>
+          <div className="prize-item">
+            <div className="prize-pct" style={{ color: "var(--green-up)" }}>5%</div>
+            <div className="prize-lbl">Referral</div>
+            <div className="prize-sub">Referrer bonus</div>
+          </div>
+        </div>
+        <div className="prize-tip">
+          <TbInfoCircle size={16} style={{ flexShrink: 0, color: "var(--gold)", marginTop: 1 }} />
+          <span>
+            The more predictions you get right, the higher your share of the 80% prize pool.
+            All 4 correct = maximum reward!
+          </span>
+        </div>
+      </div>
+
+      {/* ── WINNERS TICKER ───────────────────────────────────────────── */}
+      <div className="winners-strip">
+        <div className="winners-strip-title">
+          <TbTrophy size={12} style={{ marginRight: 6, verticalAlign: "middle" }} />
+          Recent Winners
+        </div>
+        <div className="winners-marquee">
+          {winnersDisplay.map((w, i) => (
+            <div key={i} className="winner-item">
+              <span className="winner-icon r-icon r-icon-md" style={{ color: "var(--gold)" }}>
+                {w.iconComp}
+              </span>
+              <span className="winner-name">{w.name}</span>
+              {w.amt && <span className="winner-amt">{w.amt}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── MY BETS — scrollable fixed height ────────────────────────── */}
+      <div className="section-label" style={{ marginTop: 20 }}>
+        <div className="section-line" />
+        <span className="section-text">My Bets</span>
+        <div className="section-line" />
+      </div>
+
+      <div className="lb-card lb-card-scroll" style={{ marginBottom: 14 }}>
+        <div className="lb-card-header">
+          <span className="lb-header-cyan">
+            <TbChartCandle size={13} style={{ marginRight: 6, verticalAlign: "middle" }} />
+            Your History
+          </span>
+          <span className="lb-header-gold">{myBetsTotal} Total</span>
+        </div>
+
+        {/* ── scrollable body ── */}
+        <div className="lb-scroll-body">
+          {myBets.length === 0 && (
+            <div className="lb-empty">No bets placed yet — make your first prediction above!</div>
+          )}
+
+          {myBets.map((bet) => {
+            const isWin     = parseFloat(bet.win_amount  ?? 0) > 0;
+            const isLoss    = parseFloat(bet.loss_amount ?? 0) > 0;
+            const isPending = !isWin && !isLoss;
+            return (
               <div key={bet.id} className="lb-row">
-                <span className={`lb-rank ${i < 3 ? `rank-${i + 1}` : "rank-n"}`}>
-                  {i < 3 ? RANK_ICONS[i] : `#${i + 1}`}
-                </span>
-                <div className="lb-avatar">
-                  {bet.user?.name ? bet.user.name.charAt(0).toUpperCase() : "?"}
+                <div className="lb-round-col">
+                  <span className="lb-rnd-lbl">RND</span>
+                  <span className="lb-rnd-val">#{bet.round_id}</span>
                 </div>
                 <div className="lb-info">
-                  <div className="lb-name">{bet.user?.name || "Anonymous"}</div>
                   <div className="lb-streak">
-                    Digit: {bet.question_1_ans} &middot;{" "}
-                    {bet.question_2_ans === 0 ? "HIGH" : "LOW"} &middot;{" "}
-                    {bet.question_3_ans === 0 ? "ODD" : "EVEN"} &middot;{" "}
-                    {bet.question_4_ans === 0 ? "RISE" : "FALL"}
+                    #{bet.question_1_ans} · {bet.question_2_ans === 0 ? "Big" : "Small"} ·{" "}
+                    {bet.question_3_ans === 0 ? "Odd" : "Even"} · {bet.question_4_ans === 0 ? "Rise" : "Fall"}
+                  </div>
+                  <div className="lb-time">
+                    {bet.created_at ? new Date(bet.created_at).toLocaleString() : "—"}
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: "var(--font-m)", fontSize: 12, color: "var(--gold)" }}>
-                    ${parseFloat(bet.amount).toFixed(2)}
-                  </div>
+                <div className="lb-result-col">
+                  <span className="lb-amount">${parseFloat(bet.amount).toFixed(2)}</span>
+                  {isWin  && <span className="lb-win">+${parseFloat(bet.win_amount).toFixed(2)}</span>}
+                  {isLoss && !isWin && <span className="lb-loss">-${parseFloat(bet.loss_amount).toFixed(2)}</span>}
+                  {isPending && <span className="lb-pending">PENDING</span>}
                 </div>
               </div>
-            ))}
-          </div>
-
-
-          <div className="warning-row">
-            <span className="warning-icon">⚠</span>
-            <span className="warning-text">Complete all 4 predictions before confirming</span>
-          </div>
-
-          <div style={{ height: 8 }} />
-        </main>
+            );
+          })}
+        </div>
       </div>
+
+      {/* ── ROUND PARTICIPANTS ───────────────────────────────────────── */}
+      <div className="section-label">
+        <div className="section-line" />
+        <span className="section-text">Round Participants</span>
+        <div className="section-line" />
+      </div>
+
+      <div className="lb-card" style={{ marginBottom: 14 }}>
+        <div className="lb-card-header">
+          <span className="lb-header-cyan">
+            {currentRoundId ? "Round #" + String(currentRoundId).padStart(5, "0") : "Round #00000"}
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="lb-header-gold">{roundBets.length} Bets</span>
+            <span className="lb-pool-badge">Pool ${parseFloat(roundBetsPool).toFixed(2)}</span>
+          </div>
+        </div>
+
+        {betsLoading && <div className="lb-empty">Loading…</div>}
+
+        {!betsLoading && roundBets.length === 0 && (
+          <div className="lb-empty">No participants yet</div>
+        )}
+
+        {!betsLoading && roundBets.map((bet, i) => (
+          <div key={bet.id} className="lb-row">
+            <span className={`lb-rank${i < 3 ? ` rank-${i+1}` : " rank-n"}`}>
+              {i < 3 ? RANK_ICONS_COMP[i] : `#${i+1}`}
+            </span>
+            <div className="lb-avatar">
+              {bet.user?.name ? bet.user.name.charAt(0).toUpperCase() : "?"}
+            </div>
+            <div className="lb-info">
+              <div className="lb-name">{bet.user?.name || "Anonymous"}</div>
+              <div className="lb-streak">
+                #{bet.question_1_ans} · {bet.question_2_ans === 0 ? "Big" : "Small"} ·{" "}
+                {bet.question_3_ans === 0 ? "Odd" : "Even"} · {bet.question_4_ans === 0 ? "Rise" : "Fall"}
+              </div>
+            </div>
+            <div className="lb-result-col">
+              <span className="lb-amount">${parseFloat(bet.amount).toFixed(2)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── WARNING ──────────────────────────────────────────────────── */}
+      <div className="warning-row">
+        <span className="warning-icon r-icon r-icon-sm"><FiAlertTriangle /></span>
+        <span>Complete all 4 predictions before confirming</span>
+      </div>
+
+      <div style={{ height: 8 }} />
     </div>
   );
 }

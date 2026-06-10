@@ -272,31 +272,7 @@ export default function LoginPage() {
               <p className="login-sub">Sign in to your CoinPool X account and start predicting</p>
             </div>
 
-            <div className="stats-strip">
-              <div className="strip-stat">
-                <Trophy size={18} className="strip-svg-icon gold" strokeWidth={1.8} />
-                <div>
-                  <div className="strip-val gold">$84K+</div>
-                  <div className="strip-lbl">PRIZE POOL</div>
-                </div>
-              </div>
-              <div className="strip-divider" />
-              <div className="strip-stat">
-                <Users size={18} className="strip-svg-icon cyan" strokeWidth={1.8} />
-                <div>
-                  <div className="strip-val cyan">12,480</div>
-                  <div className="strip-lbl">PLAYERS</div>
-                </div>
-              </div>
-              <div className="strip-divider" />
-              <div className="strip-stat">
-                <TrendingUp size={18} className="strip-svg-icon green" strokeWidth={1.8} />
-                <div>
-                  <div className="strip-val green">$52,284</div>
-                  <div className="strip-lbl">BTC PRICE</div>
-                </div>
-              </div>
-            </div>
+          
 
             {error && (
               <div className="error-msg">

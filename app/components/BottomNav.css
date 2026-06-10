@@ -1,99 +1,204 @@
 /* ==========================================================
-   CoinPool X — BottomNav
-   Theme: Premium Black + Gold
+   CoinPool X — Bottom Nav
+   Theme: Synced with Forgot Password (Deep Black + Gold)
+   Font: Inter throughout
    ========================================================== */
 
-:root {
-  --lb-gold:       #D4AF37;
-  --lb-gold2:      #F4D47C;
-  --lb-bg:         #0a0a0c;
-  --lb-bg-2:       #111114;
-  --lb-bg-3:       #18181c;
-  --lb-border:     rgba(212, 175, 55, 0.18);
-  --lb-border-soft:rgba(255, 255, 255, 0.06);
-  --lb-text:       #f5f5f5;
-  --lb-text-muted: #6b6b6b;
-  --lb-green:      #f1f365;
-  --lb-red:        #FF4D6D;
-  --lb-shadow:     0 0 40px rgba(212, 175, 55, 0.15);
-}
-
-.lb-bottom-nav {
+.cpx-bottom-nav {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  height: 62px;
+  background: linear-gradient(#080809 0%, #080809f7 100%);
+  border-top: 1px solid rgba(212,175,55,0.14);
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-around;
-  background: linear-gradient(180deg, var(--lb-bg-2) 0%, var(--lb-bg) 100%);
-  border-top: 1px solid var(--lb-border);
-  padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5), var(--lb-shadow);
-}
-.lb-bottom-nav::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 10%; right: 10%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--lb-gold), transparent);
-  opacity: 0.5;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.lb-nav-item {
-  position: relative;
+/* full-width shimmer on top edge */
+.cpx-nav-shine {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.45) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ── Each nav item ── */
+.cpx-nav-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  flex: 1;
-  padding: 6px 4px;
+  gap: 3px;
   text-decoration: none;
-  border-radius: 10px;
-  transition: all 0.25s ease;
-}
-.lb-nav-item:hover {
-  background: rgba(212, 175, 55, 0.06);
-}
-
-.lb-nav-label {
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: var(--lb-text-muted);
-  transition: color 0.25s ease;
-  text-align: center;
+  position: relative;
+  overflow: hidden;
+  padding: 6px 4px 4px;
+  transition: opacity 0.15s;
 }
 
-.lb-nav-active .lb-nav-label {
-  color: var(--lb-gold);
-}
-.lb-nav-active {
-  background: rgba(212, 175, 55, 0.08);
-}
+.cpx-nav-item:active { opacity: 0.7; }
 
-.lb-nav-dot {
+/* gold top-bar for active item */
+.cpx-nav-top-bar {
   position: absolute;
-  bottom: 2px;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, #7a6420, #F4D47C, #D4AF37);
+  box-shadow: 0 0 8px rgba(212,175,55,0.5);
+}
+
+/* radial glow behind active icon */
+.cpx-nav-glow {
+  position: absolute;
+  top: 4px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--lb-gold);
-  box-shadow: 0 0 6px var(--lb-gold);
-  animation: dot-pulse 2s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(212,175,55,0.14) 0%, transparent 70%);
+  pointer-events: none;
 }
 
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
-  50%       { opacity: 0.6; transform: translateX(-50%) scale(0.7); }
+/* icon wrapper */
+.cpx-nav-icon-wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
 }
 
-/* ── responsive ── */
+/* ── Label ── */
+.cpx-nav-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #555566;
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.cpx-nav-active .cpx-nav-label {
+  color: #D4AF37;
+  text-shadow: 0 0 8px rgba(212,175,55,0.35);
+}
+
+/* inactive icon tint */
+.cpx-nav-item:not(.cpx-nav-active) .cpx-nav-icon-wrap svg,
+.cpx-nav-item:not(.cpx-nav-active) .cpx-nav-icon-wrap i {
+  color: #555566;
+  opacity: 0.8;
+}
+
+/* active icon tint */
+.cpx-nav-active .cpx-nav-icon-wrap svg,
+.cpx-nav-active .cpx-nav-icon-wrap i {
+  color: #D4AF37;
+  filter: drop-shadow(0 0 6px rgba(212,175,55,0.4));
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — TABLET  (≤ 768px)
+════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .cpx-bottom-nav { max-width: 100%;   background: linear-gradient(#080809 0%, #080809f7 100%);
+ }
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — MOBILE  (≤ 480px)
+════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  /* nav container */
+  .cpx-bottom-nav {
+    height: auto;
+    min-height: 58px;
+    max-width: 100%;
+    left: 0;
+    transform: none;
+      background: linear-gradient(#080809 0%, #080809f7 100%);
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+    /* safe-area for notched phones */
+  }
+
+  /* each item */
+  .cpx-nav-item      { padding: 6px 3px 4px; gap: 2px; }
+  .cpx-nav-item:active { opacity: 0.6; }
+
+  /* icon */
+  .cpx-nav-icon-wrap { width: 24px; height: 24px; }
+
+  /* glow circle slightly smaller */
+  .cpx-nav-glow      { width: 38px; height: 38px; top: 3px; }
+
+  /* label */
+  .cpx-nav-label     { font-size: 6.5px; letter-spacing: 1.2px; }
+
+  /* active top bar narrower */
+  .cpx-nav-top-bar   { left: 25%; right: 25%; height: 2px; }
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — SMALL PHONES  (≤ 360px)
+════════════════════════════════════════════ */
 @media (max-width: 360px) {
-  .lb-nav-label { font-size: 7.5px; letter-spacing: 0.6px; }
-  .lb-nav-item  { padding: 5px 2px; }
+
+  .cpx-bottom-nav    { min-height: 54px;   background: linear-gradient(#080809 0%, #080809f7 100%);}
+
+  .cpx-nav-item      { padding: 5px 2px 4px; gap: 2px; }
+
+  .cpx-nav-icon-wrap { width: 22px; height: 22px; }
+
+  .cpx-nav-glow      { width: 34px; height: 34px; }
+
+  /* hide label on very small screens to avoid overflow */
+  .cpx-nav-label     { font-size: 0; letter-spacing: 0; }
+
+  .cpx-nav-top-bar   { left: 28%; right: 28%; }
+}
+
+/* ════════════════════════════════════════════
+   SAFE AREA — Notch / Home-bar phones
+════════════════════════════════════════════ */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .cpx-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(62px + env(safe-area-inset-bottom));
+      background: linear-gradient(#080809 0%, #080809f7 100%);
+
+  }
+
+  @media (max-width: 480px) {
+    .cpx-bottom-nav {
+      height: calc(58px + env(safe-area-inset-bottom));
+        background: linear-gradient(#080809 0%, #080809f7 100%);
+
+    }
+  }
+
+  @media (max-width: 360px) {
+    .cpx-bottom-nav {
+      height: calc(54px + env(safe-area-inset-bottom));
+        background: linear-gradient(#080809 0%, #080809f7 100%);
+
+    }
+  }
 }
