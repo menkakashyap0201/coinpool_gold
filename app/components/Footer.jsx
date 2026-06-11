@@ -54,18 +54,18 @@ export default function Footer() {
             <a href="#">Responsible Play</a>
             <a href="#">Restricted Regions</a>
           </div>
+
+            {/* <div className="cpx-footer-disclaimer">
+          <p>
+            <strong className="cpx-gold">Disclaimer:</strong> CoinPool X is a skill-based prediction
+            platform. Participation involves market volatility and financial risk.
+          </p>
+        </div> */}
         </div>
 
         <div className="cpx-footer-divider" />
 
-        <div className="cpx-footer-disclaimer">
-          <p>
-            <strong className="cpx-gold">Disclaimer:</strong> CoinPool X is a skill-based prediction
-            platform. Participation involves market volatility and financial risk. Users should play
-            responsibly and avoid financial overexposure. The platform reserves the right to block
-            regions based on local regulations. Withdrawals processed on BEP20 only.
-          </p>
-        </div>
+      
 
         <div className="cpx-footer-bottom">
           <span>© {new Date().getFullYear()} CoinPool X. All rights reserved.</span>

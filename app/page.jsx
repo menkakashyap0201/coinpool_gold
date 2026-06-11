@@ -4,19 +4,78 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import {
-  ShieldIcon, UserIcon, LockIcon, BoltIcon, BanIcon, GlobeIcon,
-  CheckIcon, XIcon,
-} from "./components/Icons";
 import "./globals.css";
 import Link from "next/link";
 
+/* ═══════════════════════════════════════════
+   INLINE SVG ICONS — no external dependency
+   ═══════════════════════════════════════════ */
+const ico = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
+
+const CheckIcon = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" {...ico}>
+    <path d="M5 12 L10 17 L19 7" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" {...ico}>
+    <line x1="6" y1="6" x2="18" y2="18" />
+    <line x1="18" y1="6" x2="6" y2="18" />
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
+    <path d="M12 2 L4 5 V11 C4 16 7.5 20.5 12 22 C16.5 20.5 20 16 20 11 V5 Z" />
+    <path d="M9 12 L11 14 L15 10" />
+  </svg>
+);
+
+const UserIcon = () => (
+  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21 C4 16.5 7.5 14 12 14 C16.5 14 20 16.5 20 21" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
+    <rect x="4" y="11" width="16" height="10" rx="2" />
+    <path d="M8 11 V7 A4 4 0 0 1 16 7 V11" />
+    <circle cx="12" cy="16" r="1.2" fill="currentColor" />
+  </svg>
+);
+
+const BoltIcon = () => (
+  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
+    <path d="M13 2 L4 14 H11 L10 22 L20 10 H13 Z" />
+  </svg>
+);
+
+const BanIcon = () => (
+  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
+    <circle cx="12" cy="12" r="9" />
+    <line x1="5.6" y1="5.6" x2="18.4" y2="18.4" />
+  </svg>
+);
+
+const GlobeIcon = () => (
+  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
+    <circle cx="12" cy="12" r="9" />
+    <ellipse cx="12" cy="12" rx="4" ry="9" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+  </svg>
+);
+
+/* ═══════════════════════════════════════════
+   PAGE COMPONENT
+   ═══════════════════════════════════════════ */
 export default function HomePage() {
   const [btcPrice, setBtcPrice] = useState(67432.18);
   const [activePlayers, setActivePlayers] = useState(2847);
   const [countdown, setCountdown] = useState({ h: 2, m: 47, s: 12 });
 
-  // Simulated live BTC ticker
   useEffect(() => {
     const id = setInterval(() => {
       setBtcPrice((p) => +(p + (Math.random() - 0.5) * 80).toFixed(2));
@@ -25,7 +84,6 @@ export default function HomePage() {
     return () => clearInterval(id);
   }, []);
 
-  // Countdown for next premium slot
   useEffect(() => {
     const id = setInterval(() => {
       setCountdown((c) => {
@@ -42,12 +100,30 @@ export default function HomePage() {
 
   const pad = (n) => String(n).padStart(2, "0");
 
+  const trustItems = [
+    { icon: <ShieldIcon />, t: "Anti-Bot Defense",       d: "Bots and automation tools are permanently banned." },
+    { icon: <UserIcon />,   t: "One Account Rule",        d: "One user, one account. Violations forfeit funds." },
+    { icon: <LockIcon />,   t: "KYC Verification",        d: "Identity verification may be required for withdrawals." },
+    { icon: <BoltIcon />,   t: "Wallet Security",         d: "Security review applies for large withdrawals." },
+    { icon: <BanIcon />,    t: "No Insider Manipulation", d: "Coordinated cheating leads to permanent bans." },
+    { icon: <GlobeIcon />,  t: "Region Restrictions",     d: "Restricted jurisdictions are auto-blocked per local laws." },
+  ];
+
+  const leaderboard = [
+    { r: 1, n: "CryptoOracle_77",    t: "DIAMOND",  w: "84.2%", e: "$12,480" },
+    { r: 2, n: "Satoshi_Strategist", t: "PLATINUM", w: "79.8%", e: "$9,210"  },
+    { r: 3, n: "BlockSniper",        t: "PLATINUM", w: "77.5%", e: "$7,840"  },
+    { r: 4, n: "NeoTrader",          t: "GOLD",     w: "73.1%", e: "$5,620"  },
+    { r: 5, n: "ChainKing_X",        t: "GOLD",     w: "71.9%", e: "$4,950"  },
+  ];
+
   return (
     <>
       <Header />
 
       <main className="cpx-main">
-        {/* ============ HERO SECTION ============ */}
+
+        {/* ══════════════════════════════ HERO ══════════════════════════════ */}
         <section className="cpx-hero">
           <div className="cpx-hero-bg">
             <div className="cpx-grid-overlay" />
@@ -56,9 +132,11 @@ export default function HomePage() {
           </div>
 
           <div className="cpx-container cpx-hero-inner">
+            {/* LEFT */}
             <div className="cpx-hero-left">
               <span className="cpx-badge">
-                <span className="cpx-dot" /> LIVE · {activePlayers.toLocaleString()} Players Online
+                <span className="cpx-dot" />
+                LIVE · {activePlayers.toLocaleString()} Players Online
               </span>
 
               <h1 className="cpx-hero-title">
@@ -72,10 +150,10 @@ export default function HomePage() {
               </p>
 
               <div className="cpx-hero-cta">
-                <Link href="/register" className="cpx-btn cpx-btn-primary">
-              Join Pool
-            </Link>
-                <Link href="#" className="cpx-btn cpx-btn-outline">
+                <Link href="/register" className="cpx-btn cpx-btn-primary cpx-btn-lg">
+                  Join Pool
+                </Link>
+                <Link href="#pools" className="cpx-btn cpx-btn-outline cpx-btn-lg">
                   Enter Premium Arena
                 </Link>
               </div>
@@ -87,7 +165,7 @@ export default function HomePage() {
                 </div>
                 <div className="cpx-stat">
                   <div className="cpx-stat-value">48K+</div>
-                  <div className="cpx-stat-label">Active Players</div>
+                  <div className="cpx-stat-label">Players</div>
                 </div>
                 <div className="cpx-stat">
                   <div className="cpx-stat-value">15%</div>
@@ -96,12 +174,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* ============ HERO RIGHT — IMAGE + LIVE CARD ============ */}
-            {/* public/hero.png se image aa rahi hai. Naam alag ho to src change karo */}
+            {/* RIGHT — image + live card */}
             <div className="cpx-hero-right">
               <div className="cpx-hero-image-wrap">
                 <Image
-                  src="/hero1.png"
+                  src="/hero2.png"
                   alt="CoinPool X Prediction Arena"
                   width={300}
                   height={300}
@@ -111,7 +188,6 @@ export default function HomePage() {
                 <div className="cpx-hero-image-glow" />
               </div>
 
-              {/* Floating live card overlay */}
               <div className="cpx-live-card cpx-floating-card">
                 <div className="cpx-live-head">
                   <div>
@@ -144,17 +220,19 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ============ POOL SYSTEM ============ */}
+        {/* ══════════════════════════════ POOLS ══════════════════════════════ */}
         <section className="cpx-section" id="pools">
           <div className="cpx-container">
             <div className="cpx-section-head">
               <span className="cpx-eyebrow">— THE ARENA</span>
               <h2 className="cpx-section-title">Choose Your Pool</h2>
-              <p className="cpx-section-sub">Two tiers. Endless strategy. Pick the battlefield that matches your skill.</p>
+              <p className="cpx-section-sub">
+                Two tiers. Endless strategy. Pick the battlefield that matches your skill.
+              </p>
             </div>
 
             <div className="cpx-pool-grid">
-              {/* Standard Pool */}
+              {/* Standard */}
               <div className="cpx-pool-card">
                 <div className="cpx-pool-tag">STANDARD</div>
                 <h3 className="cpx-pool-name">Standard Pool</h3>
@@ -167,16 +245,16 @@ export default function HomePage() {
                 </div>
 
                 <ul className="cpx-pool-list">
-                  <li><CheckIcon width={18} height={18} /> Unlimited Players</li>
-                  <li><CheckIcon width={18} height={18} /> Dynamic Prize Pool</li>
-                  <li><CheckIcon width={18} height={18} /> 15% Platform Fee</li>
-                  <li><CheckIcon width={18} height={18} /> 24/7 Active Slots</li>
+                  <li><CheckIcon /> Unlimited Players</li>
+                  <li><CheckIcon /> Dynamic Prize Pool</li>
+                  <li><CheckIcon /> 15% Platform Fee</li>
+                  <li><CheckIcon /> 24/7 Active Slots</li>
                 </ul>
 
                 <button className="cpx-btn cpx-btn-outline cpx-btn-full">Enter Standard</button>
               </div>
 
-              {/* Premium Pool */}
+              {/* Premium */}
               <div className="cpx-pool-card cpx-pool-featured">
                 <div className="cpx-pool-tag cpx-tag-gold">PREMIUM · ELITE</div>
                 <h3 className="cpx-pool-name">Premium Pool</h3>
@@ -189,10 +267,10 @@ export default function HomePage() {
                 </div>
 
                 <ul className="cpx-pool-list">
-                  <li><CheckIcon width={18} height={18} /> Unlimited Players</li>
-                  <li><CheckIcon width={18} height={18} /> Larger Prize Pool</li>
-                  <li><CheckIcon width={18} height={18} /> 15% Platform Fee</li>
-                  <li><CheckIcon width={18} height={18} /> Slot every 3 hours</li>
+                  <li><CheckIcon /> Unlimited Players</li>
+                  <li><CheckIcon /> Larger Prize Pool</li>
+                  <li><CheckIcon /> 15% Platform Fee</li>
+                  <li><CheckIcon /> Slot every 3 hours</li>
                 </ul>
 
                 <button className="cpx-btn cpx-btn-primary cpx-btn-full">Enter Premium Arena</button>
@@ -201,7 +279,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ============ PREDICTION MECHANICS ============ */}
+        {/* ══════════════════════════ PREDICTION MECHANICS ══════════════════════════ */}
         <section className="cpx-section cpx-section-alt" id="how">
           <div className="cpx-container">
             <div className="cpx-section-head">
@@ -235,7 +313,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ============ PRIZE DISTRIBUTION ============ */}
+        {/* ══════════════════════════ PRIZE DISTRIBUTION ══════════════════════════ */}
         <section className="cpx-section" id="rewards">
           <div className="cpx-container cpx-prize-wrap">
             <div className="cpx-prize-left">
@@ -249,17 +327,23 @@ export default function HomePage() {
               <div className="cpx-prize-bars">
                 <div className="cpx-bar-row">
                   <div className="cpx-bar-label">Pool Winners</div>
-                  <div className="cpx-bar-track"><div className="cpx-bar-fill" style={{ width: "80%" }} /></div>
+                  <div className="cpx-bar-track">
+                    <div className="cpx-bar-fill" style={{ width: "80%" }} />
+                  </div>
                   <div className="cpx-bar-pct">80%</div>
                 </div>
                 <div className="cpx-bar-row">
                   <div className="cpx-bar-label">Platform Service Fee</div>
-                  <div className="cpx-bar-track"><div className="cpx-bar-fill cpx-bar-grey" style={{ width: "15%" }} /></div>
+                  <div className="cpx-bar-track">
+                    <div className="cpx-bar-fill cpx-bar-grey" style={{ width: "15%" }} />
+                  </div>
                   <div className="cpx-bar-pct">15%</div>
                 </div>
                 <div className="cpx-bar-row">
                   <div className="cpx-bar-label">Referral Commissions</div>
-                  <div className="cpx-bar-track"><div className="cpx-bar-fill cpx-bar-grey" style={{ width: "5%" }} /></div>
+                  <div className="cpx-bar-track">
+                    <div className="cpx-bar-fill cpx-bar-grey" style={{ width: "5%" }} />
+                  </div>
                   <div className="cpx-bar-pct">5%</div>
                 </div>
               </div>
@@ -277,7 +361,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ============ LEADERBOARD ============ */}
+        {/* ══════════════════════════ LEADERBOARD ══════════════════════════ */}
         <section className="cpx-section cpx-section-alt" id="leaderboard">
           <div className="cpx-container">
             <div className="cpx-section-head">
@@ -295,17 +379,16 @@ export default function HomePage() {
                 <div className="cpx-board-r">Earnings</div>
               </div>
 
-              {[
-                { r: 1, n: "CryptoOracle_77", t: "DIAMOND", w: "84.2%", e: "$12,480" },
-                { r: 2, n: "Satoshi_Strategist", t: "PLATINUM", w: "79.8%", e: "$9,210" },
-                { r: 3, n: "BlockSniper", t: "PLATINUM", w: "77.5%", e: "$7,840" },
-                { r: 4, n: "NeoTrader", t: "GOLD", w: "73.1%", e: "$5,620" },
-                { r: 5, n: "ChainKing_X", t: "GOLD", w: "71.9%", e: "$4,950" },
-              ].map((p) => (
-                <div key={p.r} className={`cpx-board-row ${p.r <= 3 ? "cpx-board-top" : ""}`}>
+              {leaderboard.map((p) => (
+                <div
+                  key={p.r}
+                  className={`cpx-board-row ${p.r <= 3 ? "cpx-board-top" : ""}`}
+                >
                   <div className="cpx-board-rank">#{p.r}</div>
                   <div className="cpx-board-name">{p.n}</div>
-                  <div><span className={`cpx-tier cpx-tier-${p.t.toLowerCase()}`}>{p.t}</span></div>
+                  <div>
+                    <span className={`cpx-tier cpx-tier-${p.t.toLowerCase()}`}>{p.t}</span>
+                  </div>
                   <div>{p.w}</div>
                   <div className="cpx-board-r cpx-gold">{p.e}</div>
                 </div>
@@ -314,7 +397,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ============ REFERRAL ============ */}
+        {/* ══════════════════════════ REFERRAL ══════════════════════════ */}
         <section className="cpx-section" id="referral">
           <div className="cpx-container">
             <div className="cpx-ref-card">
@@ -322,15 +405,18 @@ export default function HomePage() {
                 <span className="cpx-eyebrow">— REFERRAL PROGRAM</span>
                 <h2 className="cpx-section-title">Earn 5% On Every Deposit</h2>
                 <p className="cpx-ref-text">
-                  Refer a friend, and earn <strong className="cpx-gold">5%</strong> on every deposit they make —
+                  Refer a friend, and earn{" "}
+                  <strong className="cpx-gold">5%</strong> on every deposit they make —
                   for every slot you both play together. Build your network, build your edge.
                 </p>
+
                 <ul className="cpx-ref-list">
-                  <li><CheckIcon width={18} height={18} /> 5% per-slot commission</li>
-                  <li><CheckIcon width={18} height={18} /> XP rewards & bonuses</li>
-                  <li><CheckIcon width={18} height={18} /> You must be in the same slot to earn</li>
-                  <li className="cpx-ref-no"><XIcon width={18} height={18} /> Fake or self-referrals prohibited</li>
+                  <li><CheckIcon /> 5% per-slot commission</li>
+                  <li><CheckIcon /> XP rewards &amp; bonuses</li>
+                  <li><CheckIcon /> You must be in the same slot to earn</li>
+                  <li className="cpx-ref-no"><XIcon /> Fake or self-referrals prohibited</li>
                 </ul>
+
                 <button className="cpx-btn cpx-btn-primary">Get Referral Link</button>
               </div>
 
@@ -351,28 +437,21 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ============ TRUST / FAIR PLAY ============ */}
+        {/* ══════════════════════════ TRUST / FAIR PLAY ══════════════════════════ */}
         <section className="cpx-section cpx-section-alt" id="fair">
           <div className="cpx-container">
             <div className="cpx-section-head">
               <span className="cpx-eyebrow">— FAIR PLAY POLICY</span>
               <h2 className="cpx-section-title">Built On Integrity</h2>
-              <p className="cpx-section-sub">CoinPool X strictly enforces fair play. Skill should win — never exploits.</p>
+              <p className="cpx-section-sub">
+                CoinPool X strictly enforces fair play. Skill should win — never exploits.
+              </p>
             </div>
 
             <div className="cpx-trust-grid">
-              {[
-                { Icon: ShieldIcon, t: "Anti-Bot Defense", d: "Bots and automation tools are permanently banned." },
-                { Icon: UserIcon, t: "One Account Rule", d: "One user, one account. Violations forfeit funds." },
-                { Icon: LockIcon, t: "KYC Verification", d: "Identity verification may be required for withdrawals." },
-                { Icon: BoltIcon, t: "Wallet Security", d: "Security review applies for large withdrawals." },
-                { Icon: BanIcon, t: "No Insider Manipulation", d: "Coordinated cheating leads to permanent bans." },
-                { Icon: GlobeIcon, t: "Region Restrictions", d: "Restricted jurisdictions are auto-blocked per local laws." },
-              ].map((x, i) => (
+              {trustItems.map((x, i) => (
                 <div className="cpx-trust-card" key={i}>
-                  <div className="cpx-trust-icon">
-                    <x.Icon width={28} height={28} />
-                  </div>
+                  <div className="cpx-trust-icon">{x.icon}</div>
                   <h4>{x.t}</h4>
                   <p>{x.d}</p>
                 </div>
@@ -381,20 +460,27 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ============ WALLET ============ */}
+        {/* ══════════════════════════ WALLET ══════════════════════════ */}
         <section className="cpx-section" id="wallet">
           <div className="cpx-container cpx-wallet-wrap">
             <div className="cpx-wallet-left">
-              <span className="cpx-eyebrow">— WALLET & PAYMENTS</span>
+              <span className="cpx-eyebrow">— WALLET &amp; PAYMENTS</span>
               <h2 className="cpx-section-title">USDT. Fast. Borderless.</h2>
               <p className="cpx-wallet-text">
-                Deposits supported on <strong className="cpx-gold">TRC20</strong> and <strong className="cpx-gold">BEP20</strong>.
-                All withdrawals are processed on <strong className="cpx-gold">BEP20</strong> for security and speed.
+                Deposits supported on{" "}
+                <strong className="cpx-gold">TRC20</strong> and{" "}
+                <strong className="cpx-gold">BEP20</strong>.
+                All withdrawals are processed on{" "}
+                <strong className="cpx-gold">BEP20</strong> for security and speed.
               </p>
 
               <div className="cpx-wallet-chips">
-                <div className="cpx-chip">USDT · TRC20 <small>Deposits</small></div>
-                <div className="cpx-chip">USDT · BEP20 <small>Deposits + Withdrawals</small></div>
+                <div className="cpx-chip">
+                  USDT · TRC20 <small>Deposits</small>
+                </div>
+                <div className="cpx-chip">
+                  USDT · BEP20 <small>Deposits + Withdrawals</small>
+                </div>
               </div>
 
               <div className="cpx-wallet-notes">
@@ -413,7 +499,9 @@ export default function HomePage() {
                 </div>
                 <div className="cpx-wallet-balance">
                   <div className="cpx-wallet-label">Available Balance</div>
-                  <div className="cpx-wallet-amount">1,248.50 <small>USDT</small></div>
+                  <div className="cpx-wallet-amount">
+                    1,248.50 <small>USDT</small>
+                  </div>
                 </div>
                 <div className="cpx-wallet-actions">
                   <button className="cpx-btn cpx-btn-primary cpx-btn-sm">Deposit</button>
@@ -424,17 +512,22 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ============ FINAL CTA ============ */}
+        {/* ══════════════════════════ FINAL CTA ══════════════════════════ */}
         <section className="cpx-cta">
           <div className="cpx-container cpx-cta-inner">
             <h2 className="cpx-cta-title">Ready to test your edge?</h2>
             <p className="cpx-cta-sub">Join the next slot. Outsmart the market. Claim your reward.</p>
             <div className="cpx-cta-buttons">
-              <button className="cpx-btn cpx-btn-primary cpx-btn-lg">Join Pool Now</button>
-              <button className="cpx-btn cpx-btn-outline cpx-btn-lg">Enter Premium Arena</button>
+              <Link href="/register" className="cpx-btn cpx-btn-primary cpx-btn-lg">
+                Join Pool Now
+              </Link>
+              <Link href="#pools" className="cpx-btn cpx-btn-outline cpx-btn-lg">
+                Enter Premium Arena
+              </Link>
             </div>
           </div>
         </section>
+
       </main>
 
       <Footer />

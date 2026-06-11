@@ -23,7 +23,7 @@ export default function Header() {
         {/* Agar aapke logo ka name alag hai, sirf src="/yourname.png" change karo */}
         <a href="/" className="cpx-logo">
           <Image
-            src="/coin_logo1.png"
+            src="/millioniareX_Logo.png"
             alt="CoinPool X"
             width={160}
             height={50}

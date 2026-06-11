@@ -42,11 +42,11 @@ export const metadata: Metadata = {
   // ===== Browser tab icon (favicon) — public folder se =====
   icons: {
     icon: [
-      { url: "/coin_logo1.png", type: "image/png" },
-      { url: "/coin_logo1.png", sizes: "any" },
+      { url: "/millioniareX_Logo.png", type: "image/png" },
+      { url: "/millioniareX_Logo.png", sizes: "any" },
     ],
-    shortcut: "/coin_logo1.png",
-    apple: "/coin_logo1.png",
+    shortcut: "/millioniareX_Logo.png",
+    apple: "/millioniareX_Logo.png",
   },
 
   // Social media preview (Open Graph)
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     siteName: "CoinPool X",
     images: [
       {
-        url: "/hero.png",
+        url: "/millioniareX_Logo.png",
         width: 1200,
         height: 630,
         alt: "CoinPool X",
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     title: "CoinPool X — Where Strategy Meets Opportunity",
     description:
       "Join elite crypto prediction pools and compete for real rewards.",
-    images: ["/hero.png"],
+    images: ["/millioniareX_Logo.png"],
   },
 };
 
