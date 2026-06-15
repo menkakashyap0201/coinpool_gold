@@ -64,7 +64,7 @@ export default function TopHeader({ tab, setTab, logo }) {
         {/* Logo */}
         <div className="cpx-logo">
           <div className="cpx-logo-ring">
-            <img src="/millioniareX_Logo.png" alt="CoinPool X" className="cpx-logo-img" height={30} width={30} />
+            <img src="/coinpoolx.png" alt="CoinPool X" className="cpx-logo-img" height={30} width={30} />
           </div>
           <div className="cpx-logo-text">
             {/* <span className="cpx-logo-main">COINPOOL X</span> */}

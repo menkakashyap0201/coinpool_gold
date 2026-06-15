@@ -19,6 +19,7 @@ import {
   TbQuestionMark,
 } from "react-icons/tb";
 import { BiBitcoin } from "react-icons/bi";
+import {useRouter} from "next/navigation";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -90,7 +91,7 @@ function IncomeRow({ item }) {
         <div className="income-row-meta">
           {round && (
             <>
-              <span className="income-row-round">RND #{round.id}</span>
+              <span className="income-row-round">RND #{round.id + 24000}</span>
               <span className="income-row-dot" />
             </>
           )}
@@ -122,6 +123,15 @@ function IncomeRow({ item }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function MyIncomePage() {
+  const router = useRouter();
+  
+    useEffect(() => {
+      const token = localStorage.getItem("cpx_token");
+  
+      if (!token) {
+        router.replace("/login"); // your login page route
+      }
+    }, [router]);
   const [data,       setData]       = useState([]);
   const [summary,    setSummary]    = useState(null);
   const [loading,    setLoading]    = useState(true);

@@ -42,11 +42,11 @@ export const metadata: Metadata = {
   // ===== Browser tab icon (favicon) — public folder se =====
   icons: {
     icon: [
-      { url: "/millioniareX_Logo.png", type: "image/png" },
-      { url: "/millioniareX_Logo.png", sizes: "any" },
+      { url: "/coinpoolx.png", type: "image/png" },
+      { url: "/coinpoolx.png", sizes: "any" },
     ],
-    shortcut: "/millioniareX_Logo.png",
-    apple: "/millioniareX_Logo.png",
+    shortcut: "/coinpoolx.png",
+    apple: "/coinpoolx.png",
   },
 
   // Social media preview (Open Graph)
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     siteName: "CoinPool X",
     images: [
       {
-        url: "/millioniareX_Logo.png",
+        url: "/coinpoolx.png",
         width: 1200,
         height: 630,
         alt: "CoinPool X",
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     title: "CoinPool X — Where Strategy Meets Opportunity",
     description:
       "Join elite crypto prediction pools and compete for real rewards.",
-    images: ["/millioniareX_Logo.png"],
+    images: ["/coinpoolx.png"],
   },
 };
 
@@ -96,7 +96,8 @@ export default function RootLayout({
       lang="en"
       className={`${cormorant.variable} ${inter.variable}`}
     >
-      <body className="cpx-body">{children}</body>
+      <body className="cpx-body" suppressHydrationWarning>
+{children}</body>
     </html>
   );
 }

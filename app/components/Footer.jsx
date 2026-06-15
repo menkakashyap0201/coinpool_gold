@@ -13,7 +13,7 @@ export default function Footer() {
           <div className="cpx-footer-brand">
             {/* Logo from public folder */}
             <Image
-              src="/coin_logo1.png"
+              src="/coinpoolx.png"
               alt="CoinPool X"
               width={150}
               height={65}
@@ -55,12 +55,7 @@ export default function Footer() {
             <a href="#">Restricted Regions</a>
           </div>
 
-            {/* <div className="cpx-footer-disclaimer">
-          <p>
-            <strong className="cpx-gold">Disclaimer:</strong> CoinPool X is a skill-based prediction
-            platform. Participation involves market volatility and financial risk.
-          </p>
-        </div> */}
+            
         </div>
 
         <div className="cpx-footer-divider" />

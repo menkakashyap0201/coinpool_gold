@@ -8,7 +8,7 @@ import {
   ArrowDownToLine, BadgeDollarSign, Coins,
 } from "lucide-react";
 import { TbBrandBinance } from "react-icons/tb";
-
+import {useRouter} from "next/navigation";
 import "./withdraw.css";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -48,6 +48,15 @@ const fmt = (n) =>
   });
 
 export default function Withdraw() {
+  const router = useRouter();
+  
+    useEffect(() => {
+      const token = localStorage.getItem("cpx_token");
+  
+      if (!token) {
+        router.replace("/login"); 
+      }
+    }, [router]);
   /* ── profile ── */
   const [profile,        setProfile]        = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);

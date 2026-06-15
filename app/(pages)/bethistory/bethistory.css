@@ -1,0 +1,509 @@
+/* ==========================================================
+   CoinPool X — Bet History Page
+   Theme: Full Premium Gold (Black + Gold only)
+   ========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --gold:         #D4AF37;
+  --gold2:        #F4D47C;
+  --gold3:        #FFE49A;
+  --gold-dim:     #8a7128;
+  --gold-border:  rgba(212,175,55,0.22);
+  --gold-subtle:  rgba(212,175,55,0.08);
+  --gold-mid:     rgba(212,175,55,0.14);
+  --grad-gold-h:  linear-gradient(90deg,  #7a6420 0%, #F4D47C 50%, #D4AF37 100%);
+  --grad-gold-d:  linear-gradient(135deg, #b8921e 0%, #F4D47C 50%, #D4AF37 100%);
+  --grad-gold-btn:linear-gradient(135deg, #b8921e 0%, #F4D47C 48%, #D4AF37 100%);
+  --bg:           #080808;
+  --bg-card:      #101010;
+  --bg-card2:     #131100;
+  --bg-elevated:  #1a1a1a;
+  --text:         #FFF8E1;
+  --text-muted:   #6b5a28;
+  --text-sec:     #C9A84C;
+  --green-up:     #22c55e;
+  --red-down:     #ef4444;
+  --border-soft:  rgba(212,175,55,0.10);
+  --font-main:    'Inter', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-main); min-height: 100vh;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+/* ── Gold scrollbar ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(212,175,55,0.4), rgba(212,175,55,0.1));
+  border-radius: 2px;
+}
+
+/* ── Page wrapper ── */
+.hist-page {
+  max-width: 480px; margin: 0 auto;
+  min-height: 100vh; background: var(--bg);
+  padding-bottom: 80px;
+  position: relative; overflow-x: hidden;
+  animation: hist-in 0.3s ease both;
+}
+/* Gold rays background */
+.hist-page::before {
+  content: '';
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  width: 200%; height: 60%;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%,
+    rgba(200,150,15,0.18) 0%, rgba(130,90,5,0.10) 30%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+@keyframes hist-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ════════════════════════════════════════════════════════
+   STICKY HEADER
+════════════════════════════════════════════════════════ */
+.hist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 13px;
+  position: sticky; top: 0; z-index: 20;
+  background-color: rgba(8,8,8,0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--gold-border);
+  position: relative;
+}
+.hist-header::after {
+  content: "";
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold2), var(--gold), var(--gold2), transparent);
+  opacity: 0.45;
+}
+
+.hist-back-btn {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.14), rgba(212,175,55,0.06));
+  border: 1px solid var(--gold-border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold);
+  transition: background 0.15s, transform 0.13s;
+  flex-shrink: 0;
+}
+.hist-back-btn:hover  { background: rgba(212,175,55,0.22); transform: translateX(-2px); }
+.hist-back-btn:active { transform: translateX(0); }
+
+.hist-header-title {
+  font-size: 15px; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: var(--grad-gold-h);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.hist-header-count {
+  font-size: 12px; font-weight: 700;
+  font-family: var(--font-mono);
+  background: linear-gradient(90deg, rgba(212,175,55,0.16), rgba(212,175,55,0.08));
+  border: 1px solid var(--gold-border);
+  border-radius: 20px; padding: 4px 12px;
+  color: var(--gold);
+}
+
+/* ════════════════════════════════════════════════════════
+   SUMMARY CARDS
+════════════════════════════════════════════════════════ */
+.hist-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 14px 16px 0;
+  position: relative; z-index: 1;
+}
+
+.hist-sum-card {
+  background: linear-gradient(145deg, #0f0c00, #080800);
+  border: 1px solid var(--gold-border);
+  border-radius: 14px;
+  padding: 13px 8px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.hist-sum-card::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--grad-gold-h); opacity: 0.6;
+}
+.hist-sum-card:hover {
+  border-color: rgba(212,175,55,0.40);
+  transform: translateY(-1px);
+}
+
+.hist-sum-label {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--text-muted); margin-bottom: 7px;
+}
+.hist-sum-val {
+  font-size: 16px; font-weight: 900;
+  font-family: var(--font-mono); letter-spacing: -0.5px;
+}
+/* All values gold — only win/loss get color overrides via inline style */
+.hist-sum-gold {
+  background: var(--grad-gold-h);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hist-sum-green { color: var(--green-up); }
+.hist-sum-red   { color: var(--red-down); }
+
+/* ════════════════════════════════════════════════════════
+   FILTER TABS
+════════════════════════════════════════════════════════ */
+.hist-filter-row {
+  display: flex;
+  gap: 6px;
+  margin: 14px 16px 12px;
+  background: linear-gradient(145deg, #0d0a00, #080800);
+  border: 1px solid var(--gold-border);
+  border-radius: 14px;
+  padding: 5px;
+  position: relative; z-index: 1;
+}
+
+.hist-filter-tab {
+  flex: 1;
+  padding: 9px 6px;
+  border-radius: 10px;
+  font-size: 11.5px; font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  text-align: center;
+}
+.hist-filter-tab:hover { color: var(--gold-dim); }
+
+.hist-filter-active {
+  background: var(--grad-gold-btn);
+  color: #0f0700 !important;
+  box-shadow: 0 2px 14px rgba(212,175,55,0.30);
+}
+
+/* ════════════════════════════════════════════════════════
+   BET LIST
+════════════════════════════════════════════════════════ */
+.hist-list {
+  margin: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative; z-index: 1;
+}
+
+/* ── Individual bet card ── */
+.hist-bet-row {
+  background: linear-gradient(145deg, #0d0a00 0%, #080808 60%, #0a0900 100%);
+  border: 1px solid var(--gold-border);
+  border-radius: 16px;
+  padding: 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+/* Left accent strip — gold for all */
+.hist-bet-row::before {
+  content: "";
+  position: absolute; left: 0; top: 10px; bottom: 10px;
+  width: 3px; border-radius: 0 2px 2px 0;
+  background: var(--grad-gold-d); opacity: 0.6;
+}
+/* Top shimmer line */
+.hist-bet-row::after {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.18), transparent);
+}
+.hist-bet-row:hover {
+  border-color: rgba(212,175,55,0.38);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(212,175,55,0.08);
+}
+
+/* Win/Loss left strip colors — only these two override */
+.hist-row-win::before  { background: var(--green-up); opacity: 0.75; }
+.hist-row-loss::before { background: var(--red-down); opacity: 0.60; }
+
+/* ── Left: round + date ── */
+.hist-bet-left {
+  flex-shrink: 0;
+  min-width: 62px;
+  text-align: center;
+}
+.hist-rnd-num {
+  font-size: 12px; font-weight: 800;
+  font-family: var(--font-mono);
+  background: var(--grad-gold-h);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  line-height: 1.2;
+}
+.hist-rnd-date {
+  font-size: 9px; color: var(--text-muted);
+  margin-top: 3px; line-height: 1.4;
+}
+
+/* ── Middle: tags + badge ── */
+.hist-bet-mid {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.hist-pred-tags {
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+.hist-pred-tag {
+  font-size: 11px; font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: rgba(212,175,55,0.10);
+  border: 1px solid rgba(212,175,55,0.20);
+  color: var(--gold);
+  letter-spacing: 0.3px;
+}
+
+/* Status badges — all gold palette, only win/loss get slight color tint */
+.hist-badge {
+  display: inline-block;
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px;
+  align-self: flex-start;
+}
+.hist-badge-win {
+  background: rgba(34,197,94,0.10);
+  border: 1px solid rgba(34,197,94,0.25);
+  color: var(--green-up);
+}
+.hist-badge-loss {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.20);
+  color: var(--red-down);
+}
+.hist-badge-pending {
+  background: rgba(212,175,55,0.10);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+}
+
+/* ── Right: amounts ── */
+.hist-bet-right {
+  flex-shrink: 0; text-align: right;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.hist-bet-amount {
+  font-size: 14px; font-weight: 800;
+  font-family: var(--font-mono);
+  background: var(--grad-gold-h);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+/* Win amount — green */
+.hist-bet-pnl-win {
+  font-size: 13px; font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--green-up);
+}
+/* Loss amount — light red */
+.hist-bet-pnl-loss {
+  font-size: 13px; font-weight: 800;
+  font-family: var(--font-mono);
+  color: #fca5a5;
+}
+/* Pending — gold muted */
+.hist-bet-pnl-pending {
+  font-size: 11px; font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+/* ════════════════════════════════════════════════════════
+   LOADING + EMPTY STATES
+════════════════════════════════════════════════════════ */
+.hist-loading {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px;
+  padding: 60px 24px;
+  position: relative; z-index: 1;
+}
+.hist-loading-text {
+  font-size: 13px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.hist-spin {
+  width: 36px; height: 36px;
+  border: 2.5px solid rgba(212,175,55,0.12);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: hist-rotate 0.85s linear infinite;
+}
+@keyframes hist-rotate { to { transform: rotate(360deg); } }
+
+.hist-empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 24px; text-align: center;
+  position: relative; z-index: 1;
+}
+.hist-empty-icon {
+  width: 64px; height: 64px; border-radius: 20px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.14), rgba(212,175,55,0.05));
+  border: 1px solid var(--gold-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 18px;
+  color: var(--gold-dim);
+}
+.hist-empty-title {
+  font-size: 16px; font-weight: 800; letter-spacing: 0.5px;
+  background: var(--grad-gold-h);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 8px;
+}
+.hist-empty-sub {
+  font-size: 13px; color: var(--text-muted);
+  line-height: 1.7; max-width: 240px;
+}
+
+/* ════════════════════════════════════════════════════════
+   SECTION DIVIDER (optional use)
+════════════════════════════════════════════════════════ */
+.hist-divider {
+  display: flex; align-items: center; gap: 14px;
+  margin: 20px 16px 0;
+  position: relative; z-index: 1;
+}
+.hist-divider-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, rgba(212,175,55,0.18), transparent);
+}
+.hist-divider-gem {
+  width: 7px; height: 7px;
+  background: var(--gold); border-radius: 2px;
+  transform: rotate(45deg); flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(212,175,55,0.5);
+}
+
+/* ════════════════════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .hist-header         { padding: 12px 14px 11px; }
+  .hist-header-title   { font-size: 13px; letter-spacing: 1.5px; }
+  .hist-summary-grid   { margin: 12px 12px 0; gap: 7px; }
+  .hist-sum-card       { padding: 11px 6px; border-radius: 12px; }
+  .hist-sum-val        { font-size: 15px; }
+  .hist-sum-label      { font-size: 8.5px; }
+  .hist-filter-row     { margin: 12px 12px 10px; }
+  .hist-filter-tab     { font-size: 11px; padding: 8px 4px; }
+  .hist-list           { margin: 0 12px; gap: 7px; }
+  .hist-bet-row        { padding: 12px 12px; border-radius: 14px; gap: 10px; }
+  .hist-rnd-num        { font-size: 11px; }
+  .hist-pred-tag       { font-size: 10px; padding: 2px 6px; border-radius: 6px; }
+  .hist-bet-amount     { font-size: 13px; }
+  .hist-bet-pnl-win,
+  .hist-bet-pnl-loss   { font-size: 12px; }
+  .hist-back-btn       { width: 34px; height: 34px; border-radius: 10px; }
+}
+
+@media (max-width: 360px) {
+  .hist-summary-grid   { grid-template-columns: repeat(2, 1fr); margin: 10px 10px 0; }
+  .hist-sum-val        { font-size: 16px; }
+  .hist-filter-row     { margin: 10px 10px 8px; }
+  .hist-list           { margin: 0 10px; }
+  .hist-bet-row        { padding: 10px; gap: 8px; }
+  .hist-bet-left       { min-width: 54px; }
+  .hist-sum-card       { border-radius: 11px; }
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .hist-page { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
+
+/* ════════════════════════════════════════════════════════
+   STICKY SUMMARY + FILTER + SCROLL AREA LAYOUT
+════════════════════════════════════════════════════════ */
+
+/* Make hist-page a flex column so we can give scroll-area flex:1 */
+.hist-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  padding-bottom: 0 !important;
+}
+
+/* Sticky summary below header */
+.hist-sticky-summary {
+  flex-shrink: 0;
+  position: relative; z-index: 10;
+  background-color: rgba(8,8,8,0.97);
+  padding-bottom: 2px;
+}
+
+/* Sticky filter tabs */
+.hist-sticky-filter {
+  flex-shrink: 0;
+  position: relative; z-index: 10;
+  background-color: rgba(8,8,8,0.97);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding-bottom: 2px;
+}
+/* Gold separator line under filter */
+.hist-sticky-filter::after {
+  content: "";
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,175,55,0.16), transparent);
+  margin: 0 16px;
+}
+
+/* Scrollable bet list area */
+.hist-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: env(safe-area-inset-bottom, 80px);
+}
+.hist-scroll-area::-webkit-scrollbar { width: 3px; }
+.hist-scroll-area::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(212,175,55,0.35), rgba(212,175,55,0.08));
+  border-radius: 2px;
+}
+.hist-scroll-area::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Responsive scroll area ── */
+@media (max-width: 480px) {
+  .hist-page { height: 100dvh; }
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .hist-scroll-area {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}

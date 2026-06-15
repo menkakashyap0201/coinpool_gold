@@ -21,9 +21,9 @@ export default function Header() {
       <div className="cpx-container cpx-header-inner">
         {/* ========== LOGO — public/logo.png se aa raha hai ========== */}
         {/* Agar aapke logo ka name alag hai, sirf src="/yourname.png" change karo */}
-        <a href="/" className="cpx-logo">
+        <a href="/coinpoolx" className="cpx-logo">
           <Image
-            src="/millioniareX_Logo.png"
+            src="/coinpoolx.png"
             alt="CoinPool X"
             width={160}
             height={50}

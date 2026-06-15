@@ -1,536 +1,604 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import "./globals.css";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import "./globals.css";
 
-/* ═══════════════════════════════════════════
-   INLINE SVG ICONS — no external dependency
-   ═══════════════════════════════════════════ */
-const ico = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
+/* ─── BTC Live Price Hook (CoinGecko API) ─── */
+function useBTCPrice() {
+  const [data, setData] = useState({
+    price: null,
+    change: null,
+    high: null,
+    low: null,
+    vol: null,
+    history: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState("");
 
-const CheckIcon = () => (
-  <svg width={18} height={18} viewBox="0 0 24 24" {...ico}>
-    <path d="M5 12 L10 17 L19 7" />
-  </svg>
-);
-
-const XIcon = () => (
-  <svg width={18} height={18} viewBox="0 0 24 24" {...ico}>
-    <line x1="6" y1="6" x2="18" y2="18" />
-    <line x1="18" y1="6" x2="6" y2="18" />
-  </svg>
-);
-
-const ShieldIcon = () => (
-  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
-    <path d="M12 2 L4 5 V11 C4 16 7.5 20.5 12 22 C16.5 20.5 20 16 20 11 V5 Z" />
-    <path d="M9 12 L11 14 L15 10" />
-  </svg>
-);
-
-const UserIcon = () => (
-  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
-    <circle cx="12" cy="8" r="4" />
-    <path d="M4 21 C4 16.5 7.5 14 12 14 C16.5 14 20 16.5 20 21" />
-  </svg>
-);
-
-const LockIcon = () => (
-  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
-    <rect x="4" y="11" width="16" height="10" rx="2" />
-    <path d="M8 11 V7 A4 4 0 0 1 16 7 V11" />
-    <circle cx="12" cy="16" r="1.2" fill="currentColor" />
-  </svg>
-);
-
-const BoltIcon = () => (
-  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
-    <path d="M13 2 L4 14 H11 L10 22 L20 10 H13 Z" />
-  </svg>
-);
-
-const BanIcon = () => (
-  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
-    <circle cx="12" cy="12" r="9" />
-    <line x1="5.6" y1="5.6" x2="18.4" y2="18.4" />
-  </svg>
-);
-
-const GlobeIcon = () => (
-  <svg width={28} height={28} viewBox="0 0 24 24" {...ico}>
-    <circle cx="12" cy="12" r="9" />
-    <ellipse cx="12" cy="12" rx="4" ry="9" />
-    <line x1="3" y1="12" x2="21" y2="12" />
-  </svg>
-);
-
-/* ═══════════════════════════════════════════
-   PAGE COMPONENT
-   ═══════════════════════════════════════════ */
-export default function HomePage() {
-  const [btcPrice, setBtcPrice] = useState(67432.18);
-  const [activePlayers, setActivePlayers] = useState(2847);
-  const [countdown, setCountdown] = useState({ h: 2, m: 47, s: 12 });
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setBtcPrice((p) => +(p + (Math.random() - 0.5) * 80).toFixed(2));
-      setActivePlayers((p) => p + Math.floor((Math.random() - 0.3) * 6));
-    }, 2000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setCountdown((c) => {
-        let { h, m, s } = c;
-        s--;
-        if (s < 0) { s = 59; m--; }
-        if (m < 0) { m = 59; h--; }
-        if (h < 0) { h = 2; m = 59; s = 59; }
-        return { h, m, s };
+  const fetchPrice = async () => {
+    try {
+      const res = await fetch(
+        "https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false",
+      );
+      const json = await res.json();
+      const market = json.market_data;
+      setData((prev) => {
+        const newHistory = [
+          ...(prev.history || []),
+          market.current_price.usd,
+        ].slice(-20);
+        return {
+          price: market.current_price.usd,
+          change: market.price_change_percentage_24h,
+          high: market.high_24h.usd,
+          low: market.low_24h.usd,
+          vol: market.total_volume.usd,
+          history: newHistory,
+        };
       });
-    }, 1000);
-    return () => clearInterval(id);
+      setLastUpdated(
+        new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      );
+      setLoading(false);
+    } catch {
+      // Fallback mock data if API is unavailable
+      setData((prev) => {
+        const mockPrice = 67420 + Math.random() * 800 - 400;
+        const newHistory = [...(prev.history || []), mockPrice].slice(-20);
+        return {
+          price: mockPrice,
+          change: 2.34 + (Math.random() - 0.5),
+          high: 68900,
+          low: 65800,
+          vol: 42_300_000_000,
+          history: newHistory,
+        };
+      });
+      setLastUpdated(
+        new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      );
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPrice();
+    const timer = setInterval(fetchPrice, 30000);
+    return () => clearInterval(timer);
   }, []);
 
-  const pad = (n) => String(n).padStart(2, "0");
+  return { ...data, loading, lastUpdated };
+}
 
-  const trustItems = [
-    { icon: <ShieldIcon />, t: "Anti-Bot Defense",       d: "Bots and automation tools are permanently banned." },
-    { icon: <UserIcon />,   t: "One Account Rule",        d: "One user, one account. Violations forfeit funds." },
-    { icon: <LockIcon />,   t: "KYC Verification",        d: "Identity verification may be required for withdrawals." },
-    { icon: <BoltIcon />,   t: "Wallet Security",         d: "Security review applies for large withdrawals." },
-    { icon: <BanIcon />,    t: "No Insider Manipulation", d: "Coordinated cheating leads to permanent bans." },
-    { icon: <GlobeIcon />,  t: "Region Restrictions",     d: "Restricted jurisdictions are auto-blocked per local laws." },
-  ];
-
-  const leaderboard = [
-    { r: 1, n: "CryptoOracle_77",    t: "DIAMOND",  w: "84.2%", e: "$12,480" },
-    { r: 2, n: "Satoshi_Strategist", t: "PLATINUM", w: "79.8%", e: "$9,210"  },
-    { r: 3, n: "BlockSniper",        t: "PLATINUM", w: "77.5%", e: "$7,840"  },
-    { r: 4, n: "NeoTrader",          t: "GOLD",     w: "73.1%", e: "$5,620"  },
-    { r: 5, n: "ChainKing_X",        t: "GOLD",     w: "71.9%", e: "$4,950"  },
-  ];
+/* ─── Sparkline SVG ─── */
+function Sparkline({ data, change }) {
+  if (!data || data.length < 2) return <div style={{ height: 52 }} />;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const w = 300,
+    h = 48;
+  const pts = data
+    .map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - ((v - min) / range) * h;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  const color = (change || 0) >= 0 ? "#4ade80" : "#f87171";
+  const fillColor =
+    (change || 0) >= 0 ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)";
+  const fillPath = `M0,${h} L${pts.split(" ").join(" L")} L${w},${h} Z`;
 
   return (
-    <>
-      <Header />
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      className="btc-sparkline"
+      preserveAspectRatio="none"
+    >
+      <path d={fillPath} fill={fillColor} />
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
-      <main className="cpx-main">
+/* ─── Countdown Hook ─── */
+function useCountdown(targetDate) {
+  const [time, setTime] = useState({ d: 0, h: 0, m: 0, s: 0 });
+  useEffect(() => {
+    const update = () => {
+      const diff = new Date(targetDate) - new Date();
+      if (diff <= 0) {
+        setTime({ d: 0, h: 0, m: 0, s: 0 });
+        return;
+      }
+      setTime({
+        d: Math.floor(diff / 86400000),
+        h: Math.floor((diff % 86400000) / 3600000),
+        m: Math.floor((diff % 3600000) / 60000),
+        s: Math.floor((diff % 60000) / 1000),
+      });
+    };
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, [targetDate]);
+  return time;
+}
 
-        {/* ══════════════════════════════ HERO ══════════════════════════════ */}
-        <section className="cpx-hero">
-          <div className="cpx-hero-bg">
-            <div className="cpx-grid-overlay" />
-            <div className="cpx-glow cpx-glow-1" />
-            <div className="cpx-glow cpx-glow-2" />
+/* ─── PredCard component ─── */
+/* logoSrc: replace dummy paths with your real images */
+function PredCard({ variant, label, logoSrc, logoAlt }) {
+  return (
+    <div className={`pred-card card-${variant}`}>
+      <div className="card-coin">
+        <div className="coin-outer">
+          <div className="coin-inner">
+            {/* Replace src with your actual logo — e.g. /bitcoin-logo.png */}
+            <Image
+              src={logoSrc}
+              alt={logoAlt}
+              width={variant === "center" ? 52 : 42}
+              height={variant === "center" ? 52 : 42}
+              style={{ objectFit: "contain", borderRadius: "50%" }}
+            />
           </div>
+        </div>
+      </div>
+      <span className="card-label">{label}</span>
+    </div>
+  );
+}
 
-          <div className="cpx-container cpx-hero-inner">
-            {/* LEFT */}
-            <div className="cpx-hero-left">
-              <span className="cpx-badge">
-                <span className="cpx-dot" />
-                LIVE · {activePlayers.toLocaleString()} Players Online
-              </span>
+/* ─── Main Welcome Page ─── */
+export default function Coinpoolx() {
+  const btc = useBTCPrice();
 
-              <h1 className="cpx-hero-title">
-                Where <span className="cpx-gold">Strategy</span><br />
-                Meets <span className="cpx-gold">Opportunity.</span>
-              </h1>
+  const countdown = useCountdown("2025-09-01T00:00:00");
 
-              <p className="cpx-hero-sub">
-                Join elite crypto prediction pools and compete for real rewards.
-                Skill-based, strategy-driven — not gambling.
-              </p>
+  const fmt = (n) =>
+    n ? "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 }) : "—";
+  const fmtVol = (n) => (n ? "$" + (n / 1e9).toFixed(2) + "B" : "—");
 
-              <div className="cpx-hero-cta">
-                <Link href="/register" className="cpx-btn cpx-btn-primary cpx-btn-lg">
-                  Join Pool
-                </Link>
-                <Link href="#pools" className="cpx-btn cpx-btn-outline cpx-btn-lg">
-                  Enter Premium Arena
-                </Link>
+  return (
+    <main className="welcome-page">
+      {/* Backgrounds */}
+      <div className="bg-rays" aria-hidden="true" />
+      <div className="bg-vignette" aria-hidden="true" />
+      <div className="bg-grain" aria-hidden="true" />
+
+      {/* ── Navbar ── */}
+      <nav className="navbar">
+        <Link href="/" className="navbar-logo">
+          <div className="logo-icon-wrap">
+            <Image
+              src="/millioniare_logo.png"
+              alt="MillionairePoolX Logo"
+              width={38}
+              height={38}
+            />
+          </div>
+          <div className="logo-brand">
+            <div className="logo-brand-main">
+              Millionaire<span>PoolX</span>
+            </div>
+            <div className="logo-brand-sub">Prediction Hub</div>
+          </div>
+        </Link>
+        <div className="navbar-right">
+
+          <Link href="/login" className="navbar-cta">
+            Sign In
+          </Link>
+        </div>
+      </nav>
+
+     {/* ── Hero + Stats Two-Column Layout ── */}
+<section className="hero hero-split-layout">
+  {/* LEFT: Hero Text */}
+  <div className="hero-left">
+    <div className="hero-badge">
+      <span className="hero-badge-dot" />
+      <span className="hero-badge-text">Premium Prediction Pool</span>
+    </div>
+
+    <div className="company-label"> · MillionairePoolX · </div>
+
+    <h1 className="hero-headline">Predict Smarter.{"\n"}Win Bigger.</h1>
+
+    <p className="hero-sub">
+      Welcome to <strong>MillionairePoolX</strong> — the ultimate prediction
+      platform where strategy meets opportunity. Predict market trends,
+      compete with confidence, and unlock bigger rewards with every winning
+      decision.
+    </p>
+
+    <div className="hero-buttons">
+      <Link href="/register" className="btn-primary">
+        Enter CoinPoolX
+        <span className="btn-arrow">→</span>
+      </Link>
+      <Link href="/coinpoolx" className="btn-secondary">
+        Learn More
+      </Link>
+    </div>
+  </div>
+
+  {/* RIGHT: Stats Panel */}
+  <div className="hero-right">
+    <div className="stats-panel">
+      <div className="stats-panel-title">Platform Highlights</div>
+      <div className="stats-grid-inner">
+
+        <div className="stat-box">
+          <div className="stat-value-lg">$2.4M</div>
+          <div className="stat-box-label">Total Prizes Paid</div>
+          <div className="stat-box-desc">Across all active pools</div>
+        </div>
+
+        <div className="stat-box">
+          <div className="stat-value-lg">48K+</div>
+          <div className="stat-box-label">Active Predictors</div>
+          <div className="stat-box-desc">Competing globally</div>
+        </div>
+
+        <div className="stat-box stat-box-wide">
+          <div className="stat-box-row">
+            <div>
+              <div className="stat-value-sm">Live</div>
+              <div className="stat-box-label">BTC Price Feed</div>
+              <div className="stat-box-desc">Real-time updates every 30s</div>
+            </div>
+            <div className="stat-box-right">
+              <div className="live-pill">
+                <span className="badge-live-dot" />
+                Live Now
               </div>
+              <div className="btc-pair-label">BTC / USD</div>
+            </div>
+          </div>
+        </div>
 
-              <div className="cpx-hero-stats">
-                <div className="cpx-stat">
-                  <div className="cpx-stat-value">$2.4M+</div>
-                  <div className="cpx-stat-label">Rewards Paid</div>
-                </div>
-                <div className="cpx-stat">
-                  <div className="cpx-stat-value">48K+</div>
-                  <div className="cpx-stat-label">Players</div>
-                </div>
-                <div className="cpx-stat">
-                  <div className="cpx-stat-value">15%</div>
-                  <div className="cpx-stat-label">Platform Fee</div>
-                </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+      {/* ── Divider ── */}
+      <div className="section-divider">
+        <div className="divider-line" />
+        <div className="divider-gem" />
+        <div className="divider-line" />
+      </div>
+
+      {/* ── Products Section ── */}
+      <section className="products-section">
+        <div className="products-label">Our Platforms</div>
+        <h2 className="products-title">
+          Choose Your <em>Arena</em>
+        </h2>
+        <p className="products-subtitle">
+          Two prediction pools. One goal — winning. Explore what&apos;s live and
+          what&apos;s coming.
+        </p>
+
+        <div className="products-grid">
+          {/* MillionairePoolX */}
+          <div className="product-card">
+            <div className="card-top-row">
+              <div className="card-icon-wrap">
+                <Image
+                  src="/millioniare_logo.png"
+                  alt="MillionairePoolX Logo"
+                  width={48}
+                  height={38}
+                />
               </div>
+              {/* <div className="badge-live">Live</div> */}
             </div>
 
-            {/* RIGHT — image + live card */}
-            <div className="cpx-hero-right">
-              <div className="cpx-hero-image-wrap">
-                <Image
-                  src="/hero2.png"
-                  alt="CoinPool X Prediction Arena"
-                  width={300}
-                  height={300}
-                  priority
-                  className="cpx-hero-image"
-                />
-                <div className="cpx-hero-image-glow" />
+            <div className="card-product-name">
+              Millionaire<span>PoolX</span>
+            </div>
+            <div className="card-parent-label">
+              The Ultimate Prediction Ecosystem
+            </div>
+
+            <p className="card-desc">
+              MillionairePoolX is the powerhouse behind next-generation
+              prediction platforms. Predict markets, sports, and live events
+              while competing globally for rewards, rankings, and real profits.
+            </p>
+
+            {/* MillionairePoolX Widget */}
+            <div className="cricket-widget">
+              <div className="cricket-coming-title">
+                What Makes MillionairePoolX Different
               </div>
 
-              <div className="cpx-live-card cpx-floating-card">
-                <div className="cpx-live-head">
-                  <div>
-                    <div className="cpx-live-label">BTC / USDT · LIVE</div>
-                    <div className="cpx-live-price">
-                      ${btcPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              <div className="cricket-features">
+                {[
+                  [
+                    "Real-Time Prediction Pools",
+                    "Compete in live events worldwide",
+                  ],
+                  [
+                    "Multi-Category Ecosystem",
+                    "Crypto, Cricket, Stocks & more",
+                  ],
+                  ["Global Leaderboards", "Climb rankings and earn rewards"],
+                  [
+                    "Instant & Fair Settlements",
+                    "Fast payouts with transparent results",
+                  ],
+                ].map(([title, sub]) => (
+                  <div className="cricket-feat" key={title}>
+                    <div className="feat-dot" />
+                    <div className="feat-text">
+                      <strong>{title}</strong> — {sub}
                     </div>
                   </div>
-                  <span className="cpx-pulse" />
-                </div>
+                ))}
+              </div>
 
-                <div className="cpx-candles">
-                  {[42, 68, 35, 80, 55, 72, 48, 90, 62, 78, 45, 88].map((h, i) => (
-                    <div
-                      key={i}
-                      className={`cpx-candle ${i % 3 === 0 ? "down" : "up"}`}
-                      style={{ height: `${h}%`, animationDelay: `${i * 0.08}s` }}
-                    />
-                  ))}
-                </div>
-
-                <div className="cpx-next-slot">
-                  <div className="cpx-next-label">Next Premium Slot</div>
-                  <div className="cpx-next-timer">
-                    <span>{pad(countdown.h)}</span>:<span>{pad(countdown.m)}</span>:<span>{pad(countdown.s)}</span>
+              <div className="cricket-countdown">
+                {[
+                  ["24", "Live"],
+                  ["7", "Days"],
+                  ["∞", "Pools"],
+                  ["🌍", "Global"],
+                ].map(([v, l]) => (
+                  <div className="cd-unit" key={l}>
+                    <span className="cd-val">{v}</span>
+                    <span className="cd-label">{l}</span>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* <span className="card-cta-ghost">
+    Explore Ecosystem →
+  </span> */}
+          </div>
+
+          {/* CoinPoolX — LIVE */}
+          <div className="product-card product-card-live">
+            <div className="card-top-row">
+              <div className="card-icon-wrap">
+                <Image
+                  src="/coinpoolx.png"
+                  alt="CoinPoolX Logo"
+                  width={38}
+                  height={38}
+                />
+              </div>
+              <div className="badge-live">
+                <span className="badge-live-dot" />
+                Live Now
+              </div>
+            </div>
+
+            <div className="card-product-name">
+              Coin<span>PoolX</span>
+            </div>
+            <div className="card-parent-label">by MillionairePoolX</div>
+            <p className="card-desc">
+              Predict the <strong>Bitcoin price</strong> every round and compete
+              with thousands of players. The closest prediction wins the pool —
+              simple, fair, live.
+            </p>
+
+            {/* BTC Live Widget */}
+            <div className="btc-widget">
+              <div className="btc-header">
+                <div className="btc-pair">
+                  <div className="btc-icon"></div>
+                  <span className="btc-label">BTC / USD</span>
+                </div>
+                <span className="btc-refresh">
+                  {btc.loading ? "Loading..." : `Updated ${btc.lastUpdated}`}
+                </span>
+              </div>
+              <div className="btc-price-row">
+                <span className="btc-price">
+                  {btc.loading ? "Loading..." : fmt(btc.price)}
+                </span>
+                {!btc.loading && btc.change != null && (
+                  <span
+                    className={`btc-change ${btc.change >= 0 ? "up" : "down"}`}
+                  >
+                    {btc.change >= 0 ? "▲" : "▼"}{" "}
+                    {Math.abs(btc.change).toFixed(2)}%
+                  </span>
+                )}
+              </div>
+              <Sparkline data={btc.history} change={btc.change} />
+              <div className="btc-meta">
+                <div className="btc-meta-item">
+                  <div className="btc-meta-label">24h High</div>
+                  <div className="btc-meta-val">{fmt(btc.high)}</div>
+                </div>
+                <div className="btc-meta-item">
+                  <div className="btc-meta-label">24h Low</div>
+                  <div className="btc-meta-val">{fmt(btc.low)}</div>
+                </div>
+                <div className="btc-meta-item">
+                  <div className="btc-meta-label">Volume</div>
+                  <div className="btc-meta-val">{fmtVol(btc.vol)}</div>
                 </div>
               </div>
             </div>
+
+            <Link href="/coinpoolx" className="card-cta">
+              Play CoinPoolX →
+            </Link>
           </div>
-        </section>
 
-        {/* ══════════════════════════════ POOLS ══════════════════════════════ */}
-        <section className="cpx-section" id="pools">
-          <div className="cpx-container">
-            <div className="cpx-section-head">
-              <span className="cpx-eyebrow">— THE ARENA</span>
-              <h2 className="cpx-section-title">Choose Your Pool</h2>
-              <p className="cpx-section-sub">
-                Two tiers. Endless strategy. Pick the battlefield that matches your skill.
-              </p>
+          {/* CricketPoolX — COMING SOON */}
+          <div className="product-card">
+            <div className="card-top-row">
+              <div className="card-icon-wrap">
+                {" "}
+                <Image
+                  src="/cricketpoolx.png"
+                  alt="CricketPoolX Logo"
+                  width={38}
+                  height={38}
+                />
+              </div>
+              <div className="badge-coming">Coming Soon</div>
             </div>
 
-            <div className="cpx-pool-grid">
-              {/* Standard */}
-              <div className="cpx-pool-card">
-                <div className="cpx-pool-tag">STANDARD</div>
-                <h3 className="cpx-pool-name">Standard Pool</h3>
-                <p className="cpx-pool-desc">Low entry. High volume. Perfect for sharpening your edge.</p>
-
-                <div className="cpx-pool-price">
-                  <span className="cpx-price-currency">$</span>
-                  <span className="cpx-price-value">5</span>
-                  <span className="cpx-price-unit">USDT</span>
-                </div>
-
-                <ul className="cpx-pool-list">
-                  <li><CheckIcon /> Unlimited Players</li>
-                  <li><CheckIcon /> Dynamic Prize Pool</li>
-                  <li><CheckIcon /> 15% Platform Fee</li>
-                  <li><CheckIcon /> 24/7 Active Slots</li>
-                </ul>
-
-                <button className="cpx-btn cpx-btn-outline cpx-btn-full">Enter Standard</button>
-              </div>
-
-              {/* Premium */}
-              <div className="cpx-pool-card cpx-pool-featured">
-                <div className="cpx-pool-tag cpx-tag-gold">PREMIUM · ELITE</div>
-                <h3 className="cpx-pool-name">Premium Pool</h3>
-                <p className="cpx-pool-desc">High stakes. New slot every 3 hours from 12 PM.</p>
-
-                <div className="cpx-pool-price">
-                  <span className="cpx-price-currency">$</span>
-                  <span className="cpx-price-value">25</span>
-                  <span className="cpx-price-unit">USDT</span>
-                </div>
-
-                <ul className="cpx-pool-list">
-                  <li><CheckIcon /> Unlimited Players</li>
-                  <li><CheckIcon /> Larger Prize Pool</li>
-                  <li><CheckIcon /> 15% Platform Fee</li>
-                  <li><CheckIcon /> Slot every 3 hours</li>
-                </ul>
-
-                <button className="cpx-btn cpx-btn-primary cpx-btn-full">Enter Premium Arena</button>
-              </div>
+            <div className="card-product-name">
+              Cricket<span>PoolX</span>
             </div>
-          </div>
-        </section>
+            <div className="card-parent-label">by MillionairePoolX</div>
+            <p className="card-desc">
+              The next frontier — predict{" "}
+              <strong>live cricket match outcomes</strong>, player scores,
+              wickets &amp; more. A brand new arena where cricket fans win big.
+            </p>
 
-        {/* ══════════════════════════ PREDICTION MECHANICS ══════════════════════════ */}
-        <section className="cpx-section cpx-section-alt" id="how">
-          <div className="cpx-container">
-            <div className="cpx-section-head">
-              <span className="cpx-eyebrow">— PREDICTION FORMATS</span>
-              <h2 className="cpx-section-title">Four Ways to Predict</h2>
-              <p className="cpx-section-sub">Skill-based formats. Strategy decides the winner — not luck.</p>
-            </div>
-
-            <div className="cpx-mech-grid">
-              <div className="cpx-mech-card">
-                <div className="cpx-mech-num">01</div>
-                <h4>Exact Number</h4>
-                <p>Predict the exact digit from <strong>0 to 9</strong>. Highest reward multiplier.</p>
+            {/* Cricket Widget */}
+            <div className="cricket-widget">
+              <div className="cricket-coming-title">
+                What&apos;s coming in CricketPoolX
               </div>
-              <div className="cpx-mech-card">
-                <div className="cpx-mech-num">02</div>
-                <h4>High / Low</h4>
-                <p>Call it: <strong>High (5–9)</strong> or <strong>Low (1–4)</strong>. Read the chart.</p>
-              </div>
-              <div className="cpx-mech-card">
-                <div className="cpx-mech-num">03</div>
-                <h4>Odd / Even</h4>
-                <p>The binary classic. Pure pattern recognition wins this one.</p>
-              </div>
-              <div className="cpx-mech-card">
-                <div className="cpx-mech-num">04</div>
-                <h4>Rise or Fall</h4>
-                <p>Will the market rise or fall from the previous slot's close?</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════ PRIZE DISTRIBUTION ══════════════════════════ */}
-        <section className="cpx-section" id="rewards">
-          <div className="cpx-container cpx-prize-wrap">
-            <div className="cpx-prize-left">
-              <span className="cpx-eyebrow">— PRIZE DISTRIBUTION</span>
-              <h2 className="cpx-section-title">Transparent. Automated. Instant.</h2>
-              <p className="cpx-prize-text">
-                Rewards are credited automatically the moment results are confirmed.
-                No delays, no manual review — pure on-chain efficiency.
-              </p>
-
-              <div className="cpx-prize-bars">
-                <div className="cpx-bar-row">
-                  <div className="cpx-bar-label">Pool Winners</div>
-                  <div className="cpx-bar-track">
-                    <div className="cpx-bar-fill" style={{ width: "80%" }} />
+              <div className="cricket-features">
+                {[
+                  ["Live Match Score Predictions", "Predict every ball"],
+                  [
+                    "Player Performance Pools",
+                    "Top scorer, wicket-taker & more",
+                  ],
+                  ["Tournament Prize Pools", "IPL, World Cup, T20 & ODI"],
+                  ["Real-time Leaderboards", "Compete globally, win daily"],
+                ].map(([title, sub]) => (
+                  <div className="cricket-feat" key={title}>
+                    <div className="feat-dot" />
+                    <div className="feat-text">
+                      <strong>{title}</strong> — {sub}
+                    </div>
                   </div>
-                  <div className="cpx-bar-pct">80%</div>
-                </div>
-                <div className="cpx-bar-row">
-                  <div className="cpx-bar-label">Platform Service Fee</div>
-                  <div className="cpx-bar-track">
-                    <div className="cpx-bar-fill cpx-bar-grey" style={{ width: "15%" }} />
+                ))}
+              </div>
+              <div className="cricket-countdown">
+                {[
+                  [String(countdown.d).padStart(2, "0"), "Days"],
+                  [String(countdown.h).padStart(2, "0"), "Hours"],
+                  [String(countdown.m).padStart(2, "0"), "Mins"],
+                  [String(countdown.s).padStart(2, "0"), "Secs"],
+                ].map(([v, l]) => (
+                  <div className="cd-unit" key={l}>
+                    <span className="cd-val">{v}</span>
+                    <span className="cd-label">{l}</span>
                   </div>
-                  <div className="cpx-bar-pct">15%</div>
-                </div>
-                <div className="cpx-bar-row">
-                  <div className="cpx-bar-label">Referral Commissions</div>
-                  <div className="cpx-bar-track">
-                    <div className="cpx-bar-fill cpx-bar-grey" style={{ width: "5%" }} />
-                  </div>
-                  <div className="cpx-bar-pct">5%</div>
-                </div>
+                ))}
               </div>
             </div>
 
-            <div className="cpx-prize-right">
-              <div className="cpx-coin">
-                <div className="cpx-coin-inner">
-                  <div className="cpx-coin-text">80%</div>
-                  <div className="cpx-coin-label">TO WINNERS</div>
-                </div>
-                <div className="cpx-coin-ring" />
-              </div>
+            <span className="card-cta-ghost">Notify Me · Coming Soon</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Divider ── */}
+      <div className="section-divider">
+        <div className="divider-line" />
+        <div className="divider-gem" />
+        <div className="divider-line" />
+      </div>
+
+      {/* ── Footer ── */}
+      <footer className="welcome-footer">
+        <div className="footer-top">
+          <div className="footer-brand">
+            <div className="logo-icon-wrap">
+              <Image
+                src="/millioniare_logo.png"
+                alt="MillionairePoolX Logo"
+                width={38}
+                height={38}
+              />
+            </div>
+            {/* <div className="footer-brand-name">The<span>home of real-time prediction pools. Crypto, cricket &amp; beyond.</span></div> */}
+            <p className="footer-brand-sub">
+              The home of real-time prediction pools. Crypto, cricket &amp;
+              beyond.
+            </p>
+          </div>
+          <div className="footer-links">
+            <div className="footer-col">
+              <div className="footer-col-title">Products</div>
+              <ul className="footer-col-links">
+                <li>
+                  <Link href="#">CoinPoolX</Link>
+                </li>
+                <li>
+                  <Link href="#">CricketPoolX</Link>
+                </li>
+                <li>
+                  <Link href="#">Coming Soon</Link>
+                </li>
+              </ul>
+            </div>
+            <div className="footer-col">
+              <div className="footer-col-title">Company</div>
+              <ul className="footer-col-links">
+                <li>
+                  <Link href="#">About Us</Link>
+                </li>
+                <li>
+                  <Link href="#">Contact</Link>
+                </li>
+                <li>
+                  <Link href="#">Careers</Link>
+                </li>
+              </ul>
+            </div>
+            <div className="footer-col">
+              <div className="footer-col-title">Legal</div>
+              <ul className="footer-col-links">
+                <li>
+                  <Link href="#">Privacy Policy</Link>
+                </li>
+                <li>
+                  <Link href="#">Terms of Use</Link>
+                </li>
+                <li>
+                  <Link href="#">Fair Play Rules</Link>
+                </li>
+              </ul>
             </div>
           </div>
-        </section>
-
-        {/* ══════════════════════════ LEADERBOARD ══════════════════════════ */}
-        <section className="cpx-section cpx-section-alt" id="leaderboard">
-          <div className="cpx-container">
-            <div className="cpx-section-head">
-              <span className="cpx-eyebrow">— TOP WINNERS TODAY</span>
-              <h2 className="cpx-section-title">Leaderboard</h2>
-              <p className="cpx-section-sub">The sharpest minds in crypto prediction. Earn your spot.</p>
-            </div>
-
-            <div className="cpx-board">
-              <div className="cpx-board-head">
-                <div>Rank</div>
-                <div>Player</div>
-                <div>Tier</div>
-                <div>Win Rate</div>
-                <div className="cpx-board-r">Earnings</div>
-              </div>
-
-              {leaderboard.map((p) => (
-                <div
-                  key={p.r}
-                  className={`cpx-board-row ${p.r <= 3 ? "cpx-board-top" : ""}`}
-                >
-                  <div className="cpx-board-rank">#{p.r}</div>
-                  <div className="cpx-board-name">{p.n}</div>
-                  <div>
-                    <span className={`cpx-tier cpx-tier-${p.t.toLowerCase()}`}>{p.t}</span>
-                  </div>
-                  <div>{p.w}</div>
-                  <div className="cpx-board-r cpx-gold">{p.e}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════ REFERRAL ══════════════════════════ */}
-        <section className="cpx-section" id="referral">
-          <div className="cpx-container">
-            <div className="cpx-ref-card">
-              <div className="cpx-ref-left">
-                <span className="cpx-eyebrow">— REFERRAL PROGRAM</span>
-                <h2 className="cpx-section-title">Earn 5% On Every Deposit</h2>
-                <p className="cpx-ref-text">
-                  Refer a friend, and earn{" "}
-                  <strong className="cpx-gold">5%</strong> on every deposit they make —
-                  for every slot you both play together. Build your network, build your edge.
-                </p>
-
-                <ul className="cpx-ref-list">
-                  <li><CheckIcon /> 5% per-slot commission</li>
-                  <li><CheckIcon /> XP rewards &amp; bonuses</li>
-                  <li><CheckIcon /> You must be in the same slot to earn</li>
-                  <li className="cpx-ref-no"><XIcon /> Fake or self-referrals prohibited</li>
-                </ul>
-
-                <button className="cpx-btn cpx-btn-primary">Get Referral Link</button>
-              </div>
-
-              <div className="cpx-ref-right">
-                <div className="cpx-ref-visual">
-                  <div className="cpx-ref-node cpx-ref-you">YOU</div>
-                  <div className="cpx-ref-lines">
-                    <span /><span /><span />
-                  </div>
-                  <div className="cpx-ref-tree">
-                    <div className="cpx-ref-node">+5%</div>
-                    <div className="cpx-ref-node">+5%</div>
-                    <div className="cpx-ref-node">+5%</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════ TRUST / FAIR PLAY ══════════════════════════ */}
-        <section className="cpx-section cpx-section-alt" id="fair">
-          <div className="cpx-container">
-            <div className="cpx-section-head">
-              <span className="cpx-eyebrow">— FAIR PLAY POLICY</span>
-              <h2 className="cpx-section-title">Built On Integrity</h2>
-              <p className="cpx-section-sub">
-                CoinPool X strictly enforces fair play. Skill should win — never exploits.
-              </p>
-            </div>
-
-            <div className="cpx-trust-grid">
-              {trustItems.map((x, i) => (
-                <div className="cpx-trust-card" key={i}>
-                  <div className="cpx-trust-icon">{x.icon}</div>
-                  <h4>{x.t}</h4>
-                  <p>{x.d}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════ WALLET ══════════════════════════ */}
-        <section className="cpx-section" id="wallet">
-          <div className="cpx-container cpx-wallet-wrap">
-            <div className="cpx-wallet-left">
-              <span className="cpx-eyebrow">— WALLET &amp; PAYMENTS</span>
-              <h2 className="cpx-section-title">USDT. Fast. Borderless.</h2>
-              <p className="cpx-wallet-text">
-                Deposits supported on{" "}
-                <strong className="cpx-gold">TRC20</strong> and{" "}
-                <strong className="cpx-gold">BEP20</strong>.
-                All withdrawals are processed on{" "}
-                <strong className="cpx-gold">BEP20</strong> for security and speed.
-              </p>
-
-              <div className="cpx-wallet-chips">
-                <div className="cpx-chip">
-                  USDT · TRC20 <small>Deposits</small>
-                </div>
-                <div className="cpx-chip">
-                  USDT · BEP20 <small>Deposits + Withdrawals</small>
-                </div>
-              </div>
-
-              <div className="cpx-wallet-notes">
-                <div>— Minimum deposit limits apply</div>
-                <div>— KYC may be required for withdrawals</div>
-                <div>— Large withdrawals undergo security review</div>
-                <div>— Standard processing within stated timeframes</div>
-              </div>
-            </div>
-
-            <div className="cpx-wallet-right">
-              <div className="cpx-wallet-card">
-                <div className="cpx-wallet-card-top">
-                  <span>CoinPool X · Wallet</span>
-                  <span className="cpx-gold">●●●●</span>
-                </div>
-                <div className="cpx-wallet-balance">
-                  <div className="cpx-wallet-label">Available Balance</div>
-                  <div className="cpx-wallet-amount">
-                    1,248.50 <small>USDT</small>
-                  </div>
-                </div>
-                <div className="cpx-wallet-actions">
-                  <button className="cpx-btn cpx-btn-primary cpx-btn-sm">Deposit</button>
-                  <button className="cpx-btn cpx-btn-outline cpx-btn-sm">Withdraw</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════ FINAL CTA ══════════════════════════ */}
-        <section className="cpx-cta">
-          <div className="cpx-container cpx-cta-inner">
-            <h2 className="cpx-cta-title">Ready to test your edge?</h2>
-            <p className="cpx-cta-sub">Join the next slot. Outsmart the market. Claim your reward.</p>
-            <div className="cpx-cta-buttons">
-              <Link href="/register" className="cpx-btn cpx-btn-primary cpx-btn-lg">
-                Join Pool Now
-              </Link>
-              <Link href="#pools" className="cpx-btn cpx-btn-outline cpx-btn-lg">
-                Enter Premium Arena
-              </Link>
-            </div>
-          </div>
-        </section>
-
-      </main>
-
-      <Footer />
-    </>
+        </div>
+        <div className="footer-bottom">
+          <p className="footer-note">
+            © {new Date().getFullYear()} MillionairePoolX · All rights reserved
+          </p>
+          <p className="footer-sub-note">
+            CoinPoolX &amp; CricketPoolX are products of MillionairePoolX
+          </p>
+        </div>
+      </footer>
+    </main>
   );
 }

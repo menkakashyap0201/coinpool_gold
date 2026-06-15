@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import "./profile.css";
 
+
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 const formatCurrency = (v) => "$" + Number(v || 0).toLocaleString();
@@ -51,7 +52,16 @@ function Toast({ msg, type }) {
 }
 
 export default function ProfilePage() {
+ 
   const router = useRouter();
+  
+    useEffect(() => {
+      const token = localStorage.getItem("cpx_token");
+  
+      if (!token) {
+        router.replace("/login"); 
+      }
+    }, [router]);
 
   const [profile,   setProfile]   = useState(null);
   const [loading,   setLoading]   = useState(true);

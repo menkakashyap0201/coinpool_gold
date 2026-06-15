@@ -2,8 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import "./home.css";
 import SparkChart from "../../components/TradingView/SparkChart";
-
-// React Icons
+import { useRouter } from "next/navigation";
 import {
   BiBitcoin,
 } from "react-icons/bi";
@@ -19,6 +18,8 @@ import {
   FiTarget,
   FiZap,
   FiAward,
+  FiX,
+  FiUsers,
 } from "react-icons/fi";
 import {
   MdOutlineWaterDrop,
@@ -29,7 +30,6 @@ import {
   RiBarChartGroupedLine,
 } from "react-icons/ri";
 import {
-  TbChartCandle,
   TbTrophy,
   TbMedal,
   TbCurrencyDollar,
@@ -43,13 +43,12 @@ import {
   TbRefresh,
 } from "react-icons/tb";
 import {
-  IoOddEvenSharp,
-} from "react-icons/io5";
-import {
   PiCoinVerticalDuotone,
 } from "react-icons/pi";
+import { FaHistory } from "react-icons/fa";
+import Link from "next/link";
 
-// ─── Constants ──────────────────────────────────────────────────────────────
+
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 const POLL_INTERVAL = 5000;
 
@@ -106,23 +105,127 @@ function ToastContainer({ toasts, onRemove }) {
 }
 
 // ─── Static deco SVG lines ────────────────────────────────────────────────────
-function HeroDeco() {
+
+
+// ─── Pool Hero Logo (right side) ─────────────────────────────────────────────
+function HeroLogo() {
   return (
-    <svg className="pool-hero-deco" viewBox="0 0 110 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 80 C15 70 20 60 30 55 C40 50 45 58 55 48 C65 38 68 25 78 20 C88 15 95 22 105 10"
-        stroke="#ea9c1e" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M5 85 C15 78 22 68 35 63 C48 58 52 66 62 56 C72 46 74 33 84 28 C94 23 100 30 108 18"
-        stroke="#ea9c1e" strokeWidth="0.8" strokeLinecap="round" fill="none" opacity="0.5" />
-      <circle cx="105" cy="10" r="3" fill="#ea9c1e" opacity="0.8" />
-      <circle cx="30"  cy="55" r="2" fill="#ea9c1e" opacity="0.5" />
-      <circle cx="55"  cy="48" r="2" fill="#ea9c1e" opacity="0.5" />
-    </svg>
+    <div className="pool-hero-logo">
+      <Link href="/bethistory">
+       <div className="pool-hero-logo-icon">
+        <FaHistory style={{ color:"gold" }}/>
+      </div>
+      </Link>
+    </div>
+  );
+}
+
+// ─── Round Participants Modal ─────────────────────────────────────────────────
+function RoundParticipantsModal({ open, onClose, roundBets, roundBetsPool, currentRoundId, betsLoading }) {
+  useEffect(() => {
+    if (open) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  if (!open) return null;
+
+  return (
+    <div className="rp-overlay" onClick={onClose}>
+      <div className="rp-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="rp-modal-header">
+          <div className="rp-modal-title">
+             <div className="action-btn-icon">
+            <TbUsers size={20} />
+          </div>
+            ROUND PARTICIPANTS
+          </div>
+          <div className="rp-modal-meta">
+            <span className="rp-round-badge">
+              {currentRoundId ? "Round #" + String(currentRoundId + 24000).padStart(5, "0") : "Round #00000"}
+            </span>
+            <button className="rp-close-btn" onClick={onClose}>
+              <FiX size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Stats bar */}
+        <div className="rp-stats-bar">
+          <div className="rp-stat">
+            <span className="rp-stat-label">Total Bets</span>
+            <span className="rp-stat-val">{roundBets.length}</span>
+          </div>
+          <div className="rp-stat-divider" />
+          <div className="rp-stat">
+            <span className="rp-stat-label">Prize Pool</span>
+            <span className="rp-stat-val gold">${parseFloat(roundBetsPool).toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="rp-scroll-body">
+          {betsLoading && (
+            <div className="rp-empty">
+              <FiLoader size={24} style={{ marginBottom: 10, opacity: 0.4, animation: "spin 1s linear infinite" }} />
+              <div>Loading participants…</div>
+            </div>
+          )}
+
+          {!betsLoading && roundBets.length === 0 && (
+            <div className="rp-empty">
+              <TbUsers size={32} style={{ marginBottom: 10, opacity: 0.3 }} />
+              <div>No participants yet</div>
+              <div style={{ fontSize: 12, marginTop: 4, opacity: 0.6 }}>Be the first to place a bet!</div>
+            </div>
+          )}
+
+          {!betsLoading && roundBets.map((bet, i) => (
+            <div key={bet.id} className="rp-row">
+              <span className={`rp-rank${i < 3 ? ` rp-rank-${i+1}` : " rp-rank-n"}`}>
+                {i < 3 ? RANK_ICONS_COMP[i] : `#${i+1}`}
+              </span>
+              <div className="rp-avatar">
+                {bet.user?.name ? bet.user.name.charAt(0).toUpperCase() : "?"}
+              </div>
+              <div className="rp-info">
+                <div className="rp-name">{bet.user?.name || "Anonymous"}</div>
+                <div className="rp-preds">
+                  <span className="rp-pred-tag">#{bet.question_1_ans}</span>
+                  <span className="rp-pred-tag">{bet.question_2_ans === 0 ? "Big" : "Small"}</span>
+                  <span className="rp-pred-tag">{bet.question_3_ans === 0 ? "Odd" : "Even"}</span>
+                  <span className="rp-pred-tag">{bet.question_4_ans === 0 ? "Rise" : "Fall"}</span>
+                </div>
+              </div>
+              <div className="rp-amount-col">
+                <span className="rp-amount">${parseFloat(bet.amount).toFixed(2)}</span>
+                {parseFloat(bet.win_amount ?? 0) > 0 && (
+                  <span className="rp-win">+${parseFloat(bet.win_amount).toFixed(2)}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("cpx_token");
+    if (!token) router.replace("/login");
+  }, [router]);
+
   const { toasts, addToast, removeToast } = useToast();
+
+  // ── Modal state ──────────────────────────────────────────────────────────
+  const [rpModalOpen, setRpModalOpen] = useState(false);
+  const [pdModalOpen, setPdModalOpen] = useState(false);
 
   const [exactNum, setExactNum] = useState(null);
   const [bigSmall, setBigSmall] = useState(null);
@@ -202,14 +305,12 @@ export default function Home() {
         setChange({ val: Math.abs(absChg).toFixed(2), pct: Math.abs(pctChg).toFixed(2), up: pctChg >= 0 });
       }
     } catch (err) {
-      // Primary endpoint failed — try fallback silently (price is non-critical, no toast needed)
       console.warn("[BTC Price] Primary fetch failed:", err.message);
       try {
         const r2 = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
         const d2 = await r2.json();
         if (d2.price) handlePriceUpdate(parseFloat(d2.price));
       } catch (fallbackErr) {
-        // Both price feeds failed — stale price shown, user not disturbed (auto-retries every 5s)
         console.error("[BTC Price] Fallback also failed:", fallbackErr.message);
       }
     }
@@ -235,7 +336,6 @@ export default function Home() {
         if (list.length > 0) setWinners(list);
       }
     } catch (err) {
-      // Winners ticker is decorative — log but don't interrupt the user
       console.warn("[Winners] Failed to fetch:", err.message);
     }
   }, []);
@@ -260,7 +360,6 @@ export default function Home() {
       }
     } catch (err) {
       console.error("[Round Bets] Fetch failed:", err.message);
-      // Don't show toast — this runs in background polling, not triggered by user action
     } finally {
       setBetsLoading(false);
     }
@@ -278,7 +377,6 @@ export default function Home() {
         setMyBetsTotal(json.total_bets ?? 0);
       }
     } catch (err) {
-      // Polled silently — avoid spamming toasts every 5s if network is weak
       console.warn("[My Bets] Fetch failed:", err.message);
     }
   }, []);
@@ -292,7 +390,6 @@ export default function Home() {
       const json = await res.json();
       if (json.success) setDashboardData(json.data ?? null);
     } catch (err) {
-      // Dashboard stats are supplementary — polled every 5s, no toast on transient failures
       console.warn("[Dashboard] Fetch failed:", err.message);
     }
   }, []);
@@ -307,7 +404,6 @@ export default function Home() {
       if (json.status) setProfile(json.data ?? null);
     } catch (err) {
       console.error("[Profile] Fetch failed:", err.message);
-      // Only toast on initial load (profile will be null, UI shows fallback values)
       addToast("Could not load profile. Please refresh.", "error");
     }
   }, [addToast]);
@@ -392,9 +488,7 @@ export default function Home() {
         }
       }
     } catch (err) {
-      // Current round is critical — but polled every 5s, so one failure is recoverable
       console.error("[Current Round] Fetch failed:", err.message);
-      // Only notify if it's a auth/server error (not just a momentary connectivity blip)
       if (err.message.includes("401") || err.message.includes("403")) {
         addToast("Session expired. Please log in again.", "error");
       }
@@ -549,6 +643,93 @@ export default function Home() {
     <div className="home-page">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
+      {/* ── ROUND PARTICIPANTS MODAL ─────────────────────────────────── */}
+      <RoundParticipantsModal
+        open={rpModalOpen}
+        onClose={() => setRpModalOpen(false)}
+        roundBets={roundBets}
+        roundBetsPool={roundBetsPool}
+        currentRoundId={currentRoundId}
+        betsLoading={betsLoading}
+      />
+
+      {/* ── PRIZE DISTRIBUTION MODAL — Bottom Sheet ─────────────────── */}
+      {pdModalOpen && (
+        <div className="pd-overlay" onClick={() => setPdModalOpen(false)}>
+          <div className="pd-modal" onClick={(e) => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="pd-modal-header">
+              <div className="pd-modal-title">
+                <div className="action-btn-icon">
+            <TbCurrencyDollar size={20} />
+          </div>
+                PRIZE DISTRIBUTION
+              </div>
+              <div className="pd-modal-meta">
+                <span className="pd-winners-badge">80% to Winners</span>
+                <button className="pd-close-btn" onClick={() => setPdModalOpen(false)}>
+                  <FiX size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Stats bar */}
+            <div className="pd-stats-bar">
+              <div className="pd-stat">
+                <span className="pd-stat-label">Total Pool</span>
+                <span className="pd-stat-val gold">${parseFloat(poolTotal).toFixed(2)}</span>
+              </div>
+              <div className="pd-stat-divider" />
+              <div className="pd-stat">
+                <span className="pd-stat-label">Winner Share</span>
+                <span className="pd-stat-val gold">80%</span>
+              </div>
+              <div className="pd-stat-divider" />
+              <div className="pd-stat">
+                <span className="pd-stat-label">Settlement</span>
+                <span className="pd-stat-val" style={{ fontSize: 13, color: "var(--green-up)" }}>Auto</span>
+              </div>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="pd-scroll-body">
+              {/* Distribution cards */}
+              <div className="pd-dist-grid">
+                <div className="pd-dist-card gold-card">
+                  <span className="pd-dist-icon">🏆</span>
+                  <div className="pd-dist-pct">80%</div>
+                  <div className="pd-dist-lbl">Winners</div>
+                  <div className="pd-dist-sub">Shared by correct predictors</div>
+                </div>
+                <div className="pd-dist-card blue-card">
+                  <span className="pd-dist-icon">⚙️</span>
+                  <div className="pd-dist-pct">15%</div>
+                  <div className="pd-dist-lbl">Platform</div>
+                  <div className="pd-dist-sub">Maintenance & ops</div>
+                </div>
+                <div className="pd-dist-card green-card">
+                  <span className="pd-dist-icon">🤝</span>
+                  <div className="pd-dist-pct">5%</div>
+                  <div className="pd-dist-lbl">Referral</div>
+                  <div className="pd-dist-sub">Referrer bonus</div>
+                </div>
+              </div>
+
+              {/* Tip */}
+              <div className="pd-tip">
+                <TbInfoCircle size={16} className="pd-tip-icon" />
+                <span>
+                  The more predictions you get right, the higher your share of the 80% prize pool.
+                  All 4 correct = maximum reward!
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* ── GREETING HEADER ─────────────────────────────────────────── */}
       <div className="home-header">
         <div className="home-header-left">
@@ -572,10 +753,9 @@ export default function Home() {
 
       {/* ── POOL HERO CARD ──────────────────────────────────────────── */}
       <div className="pool-hero">
-        <HeroDeco />
-        <div className="pool-hero-chart">
-          {/* <SparkChart color={change.up ? "#ea9c1e" : "#ef4444"} /> */}
-        </div>
+        {/* <HeroDeco /> */}
+        <HeroLogo />
+        <div className="pool-hero-chart" />
 
         <div className="pool-hero-label">
           <span className="live-dot" style={{ display: "inline-block", marginRight: 6, verticalAlign: "middle", background: "#ef4444" }} />
@@ -592,31 +772,23 @@ export default function Home() {
           <span>Players: <strong>{dashboardData?.total_active_users ?? "2,450"}</strong></span>
         </div>
 
-        {/* ── dual timer block — always visible ── */}
+        {/* ── dual timer block ── */}
         <div className="hero-timer-block">
-          {/* LEFT — current round countdown */}
           <div className="hero-timer-col">
             <span className="hero-timer-label">
               <FiClock size={11} style={{ marginRight: 4, verticalAlign: "middle" }} />
               Closes In
             </span>
-            <div
-              ref={timerRowRef}
-              className={`hero-timer-val${roundClosed ? " round-closed" : ""}`}
-            >
+            <div ref={timerRowRef} className={`hero-timer-val${roundClosed ? " round-closed" : ""}`}>
               <span ref={minsRef}>00</span>
               <span className="hero-timer-colon">:</span>
               <span ref={secsRef}>00</span>
             </div>
-            {roundClosed && (
-              <span className="hero-timer-status red">Round Closed</span>
-            )}
+            {roundClosed && <span className="hero-timer-status red">Round Closed</span>}
           </div>
 
-          {/* divider */}
           <div className="hero-timer-divider" />
 
-          {/* RIGHT — next round countdown (always shown; dims when not upcoming) */}
           <div className="hero-timer-col">
             <span className="hero-timer-label">
               <FiArrowRight size={11} style={{ marginRight: 4, verticalAlign: "middle" }} />
@@ -627,9 +799,7 @@ export default function Home() {
               <span className="hero-timer-colon">{isUpcoming ? ":" : ""}</span>
               {isUpcoming ? upcomingSecs : ""}
             </div>
-            {isUpcoming && (
-              <span className="hero-timer-status gold">Get Ready!</span>
-            )}
+            {isUpcoming && <span className="hero-timer-status gold">Get Ready!</span>}
           </div>
         </div>
 
@@ -714,13 +884,23 @@ export default function Home() {
         </div>
       </div>
 
+      
+
       {/* ── BET AMOUNT ───────────────────────────────────────────────── */}
       <div className="section-label" style={{ marginTop: 20 }}>
+        <div className="section-line" />
+        {/* <span className="section-text">Bet Amount</span> */}
+        <div className="section-line" />
+         <div className="section-line" />
+         
+      </div>
+      <div className="cpx-pred-wrapper">
+         <div className="section-label" style={{ marginTop: 20 }}>
         <div className="section-line" />
         <span className="section-text">Bet Amount</span>
         <div className="section-line" />
       </div>
-
+        
       <div className="amount-card">
         <div className="amount-header">
           <span className="amount-label">Bet Amount</span>
@@ -753,230 +933,128 @@ export default function Home() {
         <div className="section-line" />
       </div>
 
-      <div className="predictions-wrapper">
-
-      {/* PRED 1 — Exact Last Digit */}
-      <div className="pred-card" style={{ "--pc": "rgba(234,156,30,0.18)" }}>
-        <div className="pred-card-glow" />
-        <div className="pred-header">
-          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
-            <TbCircleNumber1 size={16} />
+      {/* <div className="cpx-pred-wrapper"> */}
+        {/* ── PRED 1 — Final Digit ── */}
+        <div className="cpx-pred-card">
+          <div className="cpx-pred-hdr">
+            <div className="cpx-pred-badge"><TbCircleNumber1 size={19} /></div>
+            <div>
+              <div className="cpx-pred-title">Choose Your Final Digit</div>
+              <div className="cpx-pred-sub">Pick the last digit of BTC closing price (0–9)</div>
+            </div>
           </div>
-          <div className="pred-info">
-            <span className="pred-title">Choose Your Final Digit</span>
-            <span className="pred-sub">Pick the last digit of BTC closing price (0–9)</span>
+          <div className="cpx-digit-grid">
+            {[0,1,2,3,4,5,6,7,8,9].map((n) => (
+              <button
+                key={n}
+                className={`cpx-digit-btn${exactNum === n ? " cpx-active" : ""}`}
+                onClick={() => setExactNum(n)}
+                disabled={roundClosed || betPlaced}
+              >
+                {n}
+              </button>
+            ))}
           </div>
         </div>
-        <div className="digit-grid">
-          {[0,1,2,3,4,5,6,7,8,9].map((n) => (
-            <button
-              key={n}
-              className={`digit-btn${exactNum === n ? " active" : ""}`}
-              onClick={() => setExactNum(n)}
-              disabled={roundClosed || betPlaced}
-            >
-              {n}
+
+        {/* ── PRED 2 — Big / Small ── */}
+        <div className="cpx-pred-card">
+          <div className="cpx-pred-hdr">
+            <div className="cpx-pred-badge"><TbCircleNumber2 size={19} /></div>
+            <div><div className="cpx-pred-title">Big or Small?</div></div>
+          </div>
+          <div className="cpx-choice-pair">
+            <button className={`cpx-choice-btn${bigSmall === "big" ? " cpx-active" : ""}`} onClick={() => setBigSmall("big")} disabled={roundClosed || betPlaced}>
+              <span className="cpx-choice-icon"><FiTrendingUp /></span>
+              <span className="cpx-choice-lbl">Big</span>
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* PRED 2 — Big / Small */}
-      <div className="pred-card" style={{ "--pc": "rgba(234,156,30,0.18)" }}>
-        <div className="pred-card-glow" />
-        <div className="pred-header">
-          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
-            <TbCircleNumber2 size={16} />
-          </div>
-          <div className="pred-info">
-            <span className="pred-title">Big or Small?</span>
+            <button className={`cpx-choice-btn${bigSmall === "small" ? " cpx-active" : ""}`} onClick={() => setBigSmall("small")} disabled={roundClosed || betPlaced}>
+              <span className="cpx-choice-icon"><FiTrendingDown /></span>
+              <span className="cpx-choice-lbl">Small</span>
+            </button>
           </div>
         </div>
-        <div className="choice-pair">
-          <button
-            className={`choice-btn${bigSmall === "big" ? " active" : ""}`}
-            onClick={() => setBigSmall("big")}
-            disabled={roundClosed || betPlaced}
-          >
-            <span className="choice-icon r-icon r-icon-lg"><FiTrendingUp /></span>
-            Big
-          </button>
-          <button
-            className={`choice-btn${bigSmall === "small" ? " active" : ""}`}
-            onClick={() => setBigSmall("small")}
-            disabled={roundClosed || betPlaced}
-          >
-            <span className="choice-icon r-icon r-icon-lg"><FiTrendingDown /></span>
-            Small
-          </button>
-        </div>
-      </div>
 
-      {/* PRED 3 — Odd / Even */}
-      <div className="pred-card" style={{ "--pc": "rgba(234,156,30,0.18)" }}>
-        <div className="pred-card-glow" />
-        <div className="pred-header">
-          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
-            <TbCircleNumber3 size={16} />
+        {/* ── PRED 3 — Odd / Even ── */}
+        <div className="cpx-pred-card">
+          <div className="cpx-pred-hdr">
+            <div className="cpx-pred-badge"><TbCircleNumber3 size={19} /></div>
+            <div><div className="cpx-pred-title">Odd or Even?</div></div>
           </div>
-          <div className="pred-info">
-            <span className="pred-title">Odd or Even?</span>
+          <div className="cpx-choice-pair">
+            <button className={`cpx-choice-btn${oddEven === "odd" ? " cpx-active" : ""}`} onClick={() => setOddEven("odd")} disabled={roundClosed || betPlaced}>
+              <span className="cpx-choice-icon"><RiNumbersLine /></span>
+              <span className="cpx-choice-lbl">Odd</span>
+            </button>
+            <button className={`cpx-choice-btn${oddEven === "even" ? " cpx-active" : ""}`} onClick={() => setOddEven("even")} disabled={roundClosed || betPlaced}>
+              <span className="cpx-choice-icon"><RiBarChartGroupedLine /></span>
+              <span className="cpx-choice-lbl">Even</span>
+            </button>
           </div>
         </div>
-        <div className="choice-pair">
-          <button
-            className={`choice-btn${oddEven === "odd" ? " active" : ""}`}
-            onClick={() => setOddEven("odd")}
-            disabled={roundClosed || betPlaced}
-          >
-            <span className="choice-icon r-icon r-icon-lg"><RiNumbersLine /></span>
-            Odd
-          </button>
-          <button
-            className={`choice-btn${oddEven === "even" ? " active" : ""}`}
-            onClick={() => setOddEven("even")}
-            disabled={roundClosed || betPlaced}
-          >
-            <span className="choice-icon r-icon r-icon-lg"><RiBarChartGroupedLine /></span>
-            Even
-          </button>
-        </div>
-      </div>
 
-      {/* PRED 4 — Rise / Fall */}
-      <div className="pred-card" style={{ "--pc": "rgba(234,156,30,0.18)" }}>
-        <div className="pred-card-glow" />
-        <div className="pred-header">
-          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
-            <TbCircleNumber4 size={16} />
+        {/* ── PRED 4 — Rise / Fall ── */}
+        <div className="cpx-pred-card">
+          <div className="cpx-pred-hdr">
+            <div className="cpx-pred-badge"><TbCircleNumber4 size={19} /></div>
+            <div><div className="cpx-pred-title">Rise or Fall?</div></div>
           </div>
-          <div className="pred-info">
-            <span className="pred-title">Rise or Fall?</span>
+          <div className="cpx-choice-pair">
+            <button className={`cpx-choice-btn${riseFall === "rise" ? " cpx-active" : ""}`} onClick={() => setRiseFall("rise")} disabled={roundClosed || betPlaced}>
+              <span className="cpx-choice-icon"><RiRocketLine /></span>
+              <span className="cpx-choice-lbl">Rise</span>
+            </button>
+            <button className={`cpx-choice-btn${riseFall === "fall" ? " cpx-active" : ""}`} onClick={() => setRiseFall("fall")} disabled={roundClosed || betPlaced}>
+              <span className="cpx-choice-icon"><MdOutlineWaterDrop /></span>
+              <span className="cpx-choice-lbl">Fall</span>
+            </button>
           </div>
         </div>
-        <div className="choice-pair">
-          <button
-            className={`choice-btn${riseFall === "rise" ? " active" : ""}`}
-            onClick={() => setRiseFall("rise")}
-            disabled={roundClosed || betPlaced}
-          >
-            <span className="choice-icon r-icon r-icon-lg"><RiRocketLine /></span>
-            Rise
-          </button>
-          <button
-            className={`choice-btn${riseFall === "fall" ? " active" : ""}`}
-            onClick={() => setRiseFall("fall")}
-            disabled={roundClosed || betPlaced}
-          >
-            <span className="choice-icon r-icon r-icon-lg"><MdOutlineWaterDrop /></span>
-            Fall
-          </button>
-        </div>
-      </div>
 
-  
-
-      {/* ── UPCOMING BANNER ──────────────────────────────────────────── */}
-      {isUpcoming && (
-        <div className="upcoming-banner">
-          <FiClock style={{ marginRight: 8, verticalAlign: "middle" }} />
-          ROUND STARTS IN {upcomingMins}:{upcomingSecs} — Get ready!
-        </div>
-      )}
-
-      {/* ── STATUS BANNERS ───────────────────────────────────────────── */}
-      <div className="section">
+        {/* ── Banners ── */}
+        {isUpcoming && (
+          <div className="cpx-upcoming-banner">
+            <FiClock style={{ marginRight: 7, verticalAlign: "middle" }} />
+            ROUND STARTS IN {upcomingMins}:{upcomingSecs} — Get ready!
+          </div>
+        )}
         {betSuccess && (
-          <div className="bet-success-banner">
-            <FiCheckCircle style={{ marginRight: 8, verticalAlign: "middle" }} />
+          <div className="cpx-success-banner">
+            <FiCheckCircle style={{ marginRight: 7, verticalAlign: "middle" }} />
             Bet placed! Good luck
           </div>
         )}
         {roundClosed && !betSuccess && (
-          <div className="round-closed-banner">
-            <FiAlertTriangle style={{ marginRight: 8, verticalAlign: "middle" }} />
-            Round closed
+          <div className="cpx-closed-banner">
+            <FiAlertTriangle style={{ marginRight: 7, verticalAlign: "middle" }} />
+            Round closed — waiting for next round
           </div>
         )}
-      </div>
 
-      {/* ── CONFIRM BUTTON ───────────────────────────────────────────── */}
-      <button
-        onClick={handlePlaceBet}
-        className={`confirm-btn${betDisabled ? " confirm-disabled" : ""}${betPlaced && !betLoading ? " confirm-bet-placed" : ""}`}
-        disabled={betDisabled}
-      >
-        <div className="confirm-btn-glow" />
-        <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+        {/* ── Confirm button ── */}
+        <button
+          onClick={handlePlaceBet}
+          className={`cpx-confirm-btn${betPlaced && !betLoading && !betSuccess ? " cpx-confirm-locked" : ""}`}
+          disabled={betDisabled}
+        >
           {betLoading ? (
-            <><FiLoader className="spin-icon" /> PLACING BET...</>
+            <><FiLoader className="spin-icon" style={{ marginRight: 6 }} />PLACING BET...</>
           ) : betSuccess ? (
-            <><FiCheckCircle /> BET PLACED SUCCESSFULLY!</>
+            <><FiCheckCircle style={{ marginRight: 6 }} />BET PLACED SUCCESSFULLY!</>
           ) : betPlaced ? (
-            <><FiLock /> BET LOCKED — WAITING FOR NEXT ROUND</>
+            <><FiLock style={{ marginRight: 6 }} />BET LOCKED — NEXT ROUND</>
           ) : isUpcoming ? (
-            <><FiClock /> OPENS IN {upcomingMins}:{upcomingSecs}</>
+            <><FiClock style={{ marginRight: 6 }} />OPENS IN {upcomingMins}:{upcomingSecs}</>
           ) : (
-            <>CONFIRM PREDICTION · ${amountLoaded ? amount : "—"}</>
+            <>
+              <span>CONFIRM PREDICTION · ${amountLoaded ? amount : "0.00"}</span>
+              <FiArrowRight size={17} />
+            </>
           )}
-        </span>
-        {!betSuccess && !betLoading && !betPlaced && !isUpcoming && (
-          <span style={{ position: "relative", zIndex: 1 }}>
-            <FiArrowRight size={18} />
-          </span>
-        )}
-      </button>
-
-          </div>
-
-      {/* ── PRIZE DISTRIBUTION ───────────────────────────────────────── */}
-      <div className="section-label" style={{ marginTop: 20 }}>
-        <div className="section-line" />
-        <span className="section-text">Prize Distribution</span>
-        <div className="section-line" />
+        </button>
       </div>
 
-      <div className="prize-card">
-        <div className="pred-header" style={{ marginBottom: 4 }}>
-          <div className="pred-num" style={{ background: "var(--grad-gold-d)" }}>
-            <TbCurrencyDollar size={16} />
-          </div>
-          <div className="pred-info">
-            <span className="pred-title">How Winnings Are Split</span>
-            <span className="pred-sub">Automated after result confirmation</span>
-          </div>
-        </div>
-        <div className="prize-pool-row">
-          <span className="prize-pool-lbl">Total Pool</span>
-          <span className="prize-pool-val">${parseFloat(poolTotal).toFixed(2)}</span>
-        </div>
-        <div className="prize-row">
-          <div className="prize-item">
-            <div className="prize-pct">80%</div>
-            <div className="prize-lbl">Winners</div>
-            <div className="prize-sub">Shared by correct predictors</div>
-          </div>
-          <div className="prize-item">
-            <div className="prize-pct" style={{ color: "#4A90D9" }}>15%</div>
-            <div className="prize-lbl">Platform</div>
-            <div className="prize-sub">Maintenance & ops</div>
-          </div>
-          <div className="prize-item">
-            <div className="prize-pct" style={{ color: "var(--green-up)" }}>5%</div>
-            <div className="prize-lbl">Referral</div>
-            <div className="prize-sub">Referrer bonus</div>
-          </div>
-        </div>
-        <div className="prize-tip">
-          <TbInfoCircle size={16} style={{ flexShrink: 0, color: "var(--gold)", marginTop: 1 }} />
-          <span>
-            The more predictions you get right, the higher your share of the 80% prize pool.
-            All 4 correct = maximum reward!
-          </span>
-        </div>
-      </div>
-
-      {/* ── WINNERS TICKER ───────────────────────────────────────────── */}
+       {/* ── WINNERS TICKER ───────────────────────────────────────────── */}
       <div className="winners-strip">
         <div className="winners-strip-title">
           <TbTrophy size={12} style={{ marginRight: 6, verticalAlign: "middle" }} />
@@ -995,110 +1073,54 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── MY BETS — scrollable fixed height ────────────────────────── */}
+      {/* ── PRIZE DISTRIBUTION + ROUND PARTICIPANTS — side by side ───── */}
       <div className="section-label" style={{ marginTop: 20 }}>
         <div className="section-line" />
-        <span className="section-text">My Bets</span>
+        <span className="section-text">Quick Actions</span>
         <div className="section-line" />
       </div>
 
-      <div className="lb-card lb-card-scroll" style={{ marginBottom: 14 }}>
-        <div className="lb-card-header">
-          <span className="lb-header-cyan">
-            <TbChartCandle size={13} style={{ marginRight: 6, verticalAlign: "middle" }} />
-            Your History
-          </span>
-          <span className="lb-header-gold">{myBetsTotal} Total</span>
-        </div>
-
-        {/* ── scrollable body ── */}
-        <div className="lb-scroll-body">
-          {myBets.length === 0 && (
-            <div className="lb-empty">No bets placed yet — make your first prediction above!</div>
-          )}
-
-          {myBets.map((bet) => {
-            const isWin     = parseFloat(bet.win_amount  ?? 0) > 0;
-            const isLoss    = parseFloat(bet.loss_amount ?? 0) > 0;
-            const isPending = !isWin && !isLoss;
-            return (
-              <div key={bet.id} className="lb-row">
-                <div className="lb-round-col">
-                  <span className="lb-rnd-lbl">RND</span>
-                  <span className="lb-rnd-val">#{bet.round_id}</span>
-                </div>
-                <div className="lb-info">
-                  <div className="lb-streak">
-                    #{bet.question_1_ans} · {bet.question_2_ans === 0 ? "Big" : "Small"} ·{" "}
-                    {bet.question_3_ans === 0 ? "Odd" : "Even"} · {bet.question_4_ans === 0 ? "Rise" : "Fall"}
-                  </div>
-                  <div className="lb-time">
-                    {bet.created_at ? new Date(bet.created_at).toLocaleString() : "—"}
-                  </div>
-                </div>
-                <div className="lb-result-col">
-                  <span className="lb-amount">${parseFloat(bet.amount).toFixed(2)}</span>
-                  {isWin  && <span className="lb-win">+${parseFloat(bet.win_amount).toFixed(2)}</span>}
-                  {isLoss && !isWin && <span className="lb-loss">-${parseFloat(bet.loss_amount).toFixed(2)}</span>}
-                  {isPending && <span className="lb-pending">PENDING</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── ROUND PARTICIPANTS ───────────────────────────────────────── */}
-      <div className="section-label">
-        <div className="section-line" />
-        <span className="section-text">Round Participants</span>
-        <div className="section-line" />
-      </div>
-
-      <div className="lb-card" style={{ marginBottom: 14 }}>
-        <div className="lb-card-header">
-          <span className="lb-header-cyan">
-            {currentRoundId ? "Round #" + String(currentRoundId).padStart(5, "0") : "Round #00000"}
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span className="lb-header-gold">{roundBets.length} Bets</span>
-            <span className="lb-pool-badge">Pool ${parseFloat(roundBetsPool).toFixed(2)}</span>
+      <div className="action-row">
+        {/* Prize Distribution */}
+        <button className="action-btn" onClick={() => setPdModalOpen(true)}>
+          <div className="action-btn-icon">
+            <TbCurrencyDollar size={20} />
           </div>
-        </div>
+          <div className="action-btn-body">
+            <div className="action-btn-title">Prize Split</div>
+            <div className="action-btn-sub">How winnings are distributed</div>
+          </div>
+          <div className="action-btn-bottom">
+            <span className="action-btn-val">80%</span>
+            <span className="action-btn-arrow"><FiArrowRight size={12} /></span>
+          </div>
+        </button>
 
-        {betsLoading && <div className="lb-empty">Loading…</div>}
-
-        {!betsLoading && roundBets.length === 0 && (
-          <div className="lb-empty">No participants yet</div>
-        )}
-
-        {!betsLoading && roundBets.map((bet, i) => (
-          <div key={bet.id} className="lb-row">
-            <span className={`lb-rank${i < 3 ? ` rank-${i+1}` : " rank-n"}`}>
-              {i < 3 ? RANK_ICONS_COMP[i] : `#${i+1}`}
-            </span>
-            <div className="lb-avatar">
-              {bet.user?.name ? bet.user.name.charAt(0).toUpperCase() : "?"}
-            </div>
-            <div className="lb-info">
-              <div className="lb-name">{bet.user?.name || "Anonymous"}</div>
-              <div className="lb-streak">
-                #{bet.question_1_ans} · {bet.question_2_ans === 0 ? "Big" : "Small"} ·{" "}
-                {bet.question_3_ans === 0 ? "Odd" : "Even"} · {bet.question_4_ans === 0 ? "Rise" : "Fall"}
-              </div>
-            </div>
-            <div className="lb-result-col">
-              <span className="lb-amount">${parseFloat(bet.amount).toFixed(2)}</span>
+        {/* Round Participants */}
+        <button className="action-btn" onClick={() => setRpModalOpen(true)}>
+          <div className="action-btn-icon">
+            <TbUsers size={20} />
+          </div>
+          <div className="action-btn-body">
+            <div className="action-btn-title"> Round Participants</div>
+            <div className="action-btn-sub">
+              {currentRoundId ? "Round #" + String(currentRoundId + 24000).padStart(5, "0") : "Current Round"}
             </div>
           </div>
-        ))}
+          <div className="action-btn-bottom">
+            <span className="action-btn-count">{roundBets.length} Bets</span>
+            <span className="action-btn-arrow"><FiArrowRight size={12} /></span>
+          </div>
+        </button>
       </div>
+
+     
 
       {/* ── WARNING ──────────────────────────────────────────────────── */}
-      <div className="warning-row">
+      {/* <div className="warning-row">
         <span className="warning-icon r-icon r-icon-sm"><FiAlertTriangle /></span>
         <span>Complete all 4 predictions before confirming</span>
-      </div>
+      </div> */}
 
       <div style={{ height: 8 }} />
     </div>

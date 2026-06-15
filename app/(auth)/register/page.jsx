@@ -417,7 +417,7 @@ export default function RegisterPage() {
 
                 {/* Referral */}
                 <div className="form-group">
-                  <label className="form-label">REFERRAL ID <span className="label-opt">(OPTIONAL)</span></label>
+                  <label className="form-label">REFERRAL ID </label>
                   <div className="input-wrap">
                     <Users size={15} className="input-icon" strokeWidth={1.8} />
                     <input className="form-input" type="text" placeholder="e.g. DEMO123"

@@ -34,7 +34,7 @@ import {
   Hash,
   RefreshCw,
 } from 'lucide-react';
-
+import {useRouter} from "next/navigation";
 import './deposit.css';
 
 // ── Toast helper ──────────────────────────────────────────────
@@ -80,6 +80,15 @@ function ToastContainer({ toasts, onRemove }) {
 
 // ── Main Page ─────────────────────────────────────────────────
 export default function Home() {
+  const router = useRouter();
+  
+    useEffect(() => {
+      const token = localStorage.getItem("cpx_token");
+  
+      if (!token) {
+        router.replace("/login"); 
+      }
+    }, [router]);
   const { isConnected } = useAccount();
   const { toasts, addToast, removeToast } = useToast();
 
@@ -229,9 +238,9 @@ export default function Home() {
       {/* ── Hero Strip ── */}
       <div className="deposit-hero">
         <div className="hero-eyebrow">CoinPool X</div>
-        <h2 className="hero-heading">
+        {/* <h2 className="hero-heading">
           Fund your <span>gold pool</span> in two steps
-        </h2>
+        </h2> */}
         <div className="hero-chips">
           <span className="hero-chip">
             <CircleDollarSign size={11} />
