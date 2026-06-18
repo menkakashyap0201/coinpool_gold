@@ -154,6 +154,11 @@ body {
   padding: 20px 60px 20px;
 }
 
+.cta-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 /* ── LEFT SIDE ── */
 .hero-left {
   display: flex;
@@ -528,10 +533,10 @@ body {
 /* ── CARD CTA ── */
 .card-cta {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  font-family: var(--font-body); font-size: 13px; font-weight: 00;
   color: #060400;
   background: linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%);
-  padding: 11px 24px; border-radius: 8px;
+  padding: 12px 13px; border-radius: 8px;
   border: none; cursor: pointer; text-decoration: none;
   letter-spacing: 0.4px;
   box-shadow: 0 4px 20px rgba(212,175,55,0.30);
@@ -604,7 +609,7 @@ body {
 }
 .footer-brand-name span { color: var(--gold); }
 .footer-brand-sub {
-  font-family: var(--font-body); font-size: 11px; font-weight: 300;
+  font-family: var(--font-body); font-size: 12px; font-weight: 400;
   color: var(--text-muted); line-height: 1.7;
 }
 .footer-links { display: flex; gap: 52px; }
@@ -827,7 +832,7 @@ body {
   .hero-sub { font-size: 13px; text-align: center; }
   .company-label { text-align: center; }
   .hero-badge { justify-content: center; }
-  .btn-primary, .btn-secondary { max-width: 100%; font-size: 13px; padding: 12px 20px; }
+  .btn-primary, .btn-secondary { max-width: 100%; font-size: 13px; padding: 12px 13px; width: 100px; justify-content: center; }
 
   .stats-grid-inner { grid-template-columns: 1fr 1fr; gap: 8px; }
   .stat-value-lg { font-size: 24px; }

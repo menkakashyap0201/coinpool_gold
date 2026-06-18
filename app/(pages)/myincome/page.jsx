@@ -121,7 +121,7 @@ function IncomeRow({ item }) {
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Main page ───────────────────────────────────
 export default function MyIncomePage() {
   const router = useRouter();
   

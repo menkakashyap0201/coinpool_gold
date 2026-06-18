@@ -47,6 +47,8 @@ import {
 } from "react-icons/pi";
 import { FaHistory } from "react-icons/fa";
 import Link from "next/link";
+import { GiPodiumWinner } from "react-icons/gi";
+
 
 
 const BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -110,6 +112,16 @@ function ToastContainer({ toasts, onRemove }) {
 // ─── Pool Hero Logo (right side) ─────────────────────────────────────────────
 function HeroLogo() {
   return (
+
+    <>
+
+    <div className="leaderboard-box">
+      <Link href="/leaderboard">
+       <div className="leaderboard-icon">
+        <GiPodiumWinner  style={{ color:"gold" }}/>
+      </div>
+      </Link>
+    </div>
     <div className="pool-hero-logo">
       <Link href="/bethistory">
        <div className="pool-hero-logo-icon">
@@ -117,6 +129,8 @@ function HeroLogo() {
       </div>
       </Link>
     </div>
+    </>
+    
   );
 }
 
@@ -226,6 +240,8 @@ export default function Home() {
   // ── Modal state ──────────────────────────────────────────────────────────
   const [rpModalOpen, setRpModalOpen] = useState(false);
   const [pdModalOpen, setPdModalOpen] = useState(false);
+
+  const [scheduleCount, setScheduleCount] = useState({ live: 0, upcoming: 0 });
 
   const [exactNum, setExactNum] = useState(null);
   const [bigSmall, setBigSmall] = useState(null);
@@ -407,6 +423,24 @@ export default function Home() {
       addToast("Could not load profile. Please refresh.", "error");
     }
   }, [addToast]);
+
+const fetchSchedule = useCallback(async () => {
+  try {
+    const res = await fetch(`${BASE}/all-rounds`, {
+      headers: { Accept: "application/json", Authorization: getToken() },
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json.status && Array.isArray(json.data)) {
+      const now = Date.now();
+      const live = json.data.filter(
+        (r) => r.status === "active" && new Date(r.end_time).getTime() > now
+      ).length;
+      const upcoming = json.data.filter((r) => r.status === "upcoming").length;
+      setScheduleCount({ live, upcoming });
+    }
+  } catch (_) {}
+}, []);
 
   // ── Timer helpers ──────────────────────────────────────────────────────────
   const startTimer = useCallback((secs) => {
@@ -611,19 +645,25 @@ export default function Home() {
   }, [currentRoundId, fetchWinners]);
 
   useEffect(() => {
+  handleCurrentRound();
+  handleMyBets();
+  fetchBinancePrice();
+  fetchDashboard();
+  fetchProfile();
+  fetchSchedule(); // <-- yeh naya add hua
+  const poll = setInterval(() => {
     handleCurrentRound();
     handleMyBets();
-    fetchBinancePrice();
     fetchDashboard();
-    fetchProfile();
-    const poll      = setInterval(() => { handleCurrentRound(); handleMyBets(); fetchDashboard(); }, POLL_INTERVAL);
-    const pricePoll = setInterval(fetchBinancePrice, 5000);
-    return () => {
-      clearInterval(poll);
-      clearInterval(pricePoll);
-      if (upcomingTimerRef.current) clearInterval(upcomingTimerRef.current);
-    };
-  }, [handleCurrentRound, handleMyBets, fetchBinancePrice, fetchDashboard, fetchProfile]);
+    fetchSchedule(); // <-- yeh naya add hua
+  }, POLL_INTERVAL);
+  const pricePoll = setInterval(fetchBinancePrice, 5000);
+  return () => {
+    clearInterval(poll);
+    clearInterval(pricePoll);
+    if (upcomingTimerRef.current) clearInterval(upcomingTimerRef.current);
+  };
+}, [handleCurrentRound, handleMyBets, fetchBinancePrice, fetchDashboard, fetchProfile, fetchSchedule]);
 
   // ── Winners display ────────────────────────────────────────────────────────
   const defaultWinners = [
@@ -1073,6 +1113,48 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── ALL ROUNDS BUTTON ─────────────────────────────────── */}
+<div className="section-label" style={{ marginTop: 20 }}>
+  <div className="section-line" />
+  <span className="section-text">Schedule</span>
+  <div className="section-line" />
+</div>
+ 
+<Link href="/allrounds" style={{ display: "block", margin: "0 16px", textDecoration: "none" }}>
+  <div className="all-rounds-btn">
+    <div className="all-rounds-btn-left">
+      <div className="all-rounds-btn-icon">
+        <RiRocketLine size={20} />
+      </div>
+      <div className="all-rounds-btn-info">
+        <div className="all-rounds-btn-title">Upcoming Rounds</div>
+        <div className="all-rounds-btn-sub">View all scheduled Bitcoin prediction pools</div>
+      </div>
+    </div>
+    <div className="all-rounds-btn-right">
+      <div className="all-rounds-btn-pills">
+        {scheduleCount.live > 0 && (
+          <span className="all-rounds-pill live">
+            <span className="all-rounds-pill-dot" />
+            {scheduleCount.live} Live
+          </span>
+        )}
+        {scheduleCount.upcoming > 0 && (
+          <span className="all-rounds-pill upcoming">
+            {scheduleCount.upcoming} Soon
+          </span>
+        )}
+        {scheduleCount.live === 0 && scheduleCount.upcoming === 0 && (
+          <span className="all-rounds-pill loading">...</span>
+        )}
+      </div>
+      <span className="all-rounds-btn-arrow">
+        <FiArrowRight size={14} />
+      </span>
+    </div>
+  </div>
+</Link>
+
       {/* ── PRIZE DISTRIBUTION + ROUND PARTICIPANTS — side by side ───── */}
       <div className="section-label" style={{ marginTop: 20 }}>
         <div className="section-line" />
@@ -1112,6 +1194,8 @@ export default function Home() {
             <span className="action-btn-arrow"><FiArrowRight size={12} /></span>
           </div>
         </button>
+
+        
       </div>
 
      

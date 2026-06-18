@@ -225,21 +225,18 @@ export default function Coinpoolx() {
     <h1 className="hero-headline">Predict Smarter.{"\n"}Win Bigger.</h1>
 
     <p className="hero-sub">
-      Welcome to <strong>MillionairePoolX</strong> — the ultimate prediction
-      platform where strategy meets opportunity. Predict market trends,
-      compete with confidence, and unlock bigger rewards with every winning
-      decision.
+      Welcome to <strong>MillionairePoolX</strong> — the ultimate prediction platform for Crypto, Cricket, Stocks, and more. Compete, climb leaderboards, and earn rewards with fair and instant settlements.
     </p>
 
-    <div className="hero-buttons">
-      <Link href="/register" className="btn-primary">
+    
+      {/* <Link href="/register" className="btn-primary">
         Enter CoinPoolX
         <span className="btn-arrow">→</span>
       </Link>
       <Link href="/coinpoolx" className="btn-secondary">
         Learn More
-      </Link>
-    </div>
+      </Link> */}
+   
   </div>
 
   {/* RIGHT: Stats Panel */}
@@ -301,83 +298,7 @@ export default function Coinpoolx() {
         </p>
 
         <div className="products-grid">
-          {/* MillionairePoolX */}
-          <div className="product-card">
-            <div className="card-top-row">
-              <div className="card-icon-wrap">
-                <Image
-                  src="/millioniare_logo.png"
-                  alt="MillionairePoolX Logo"
-                  width={48}
-                  height={38}
-                />
-              </div>
-              {/* <div className="badge-live">Live</div> */}
-            </div>
-
-            <div className="card-product-name">
-              Millionaire<span>PoolX</span>
-            </div>
-            <div className="card-parent-label">
-              The Ultimate Prediction Ecosystem
-            </div>
-
-            <p className="card-desc">
-              MillionairePoolX is the powerhouse behind next-generation
-              prediction platforms. Predict markets, sports, and live events
-              while competing globally for rewards, rankings, and real profits.
-            </p>
-
-            {/* MillionairePoolX Widget */}
-            <div className="cricket-widget">
-              <div className="cricket-coming-title">
-                What Makes MillionairePoolX Different
-              </div>
-
-              <div className="cricket-features">
-                {[
-                  [
-                    "Real-Time Prediction Pools",
-                    "Compete in live events worldwide",
-                  ],
-                  [
-                    "Multi-Category Ecosystem",
-                    "Crypto, Cricket, Stocks & more",
-                  ],
-                  ["Global Leaderboards", "Climb rankings and earn rewards"],
-                  [
-                    "Instant & Fair Settlements",
-                    "Fast payouts with transparent results",
-                  ],
-                ].map(([title, sub]) => (
-                  <div className="cricket-feat" key={title}>
-                    <div className="feat-dot" />
-                    <div className="feat-text">
-                      <strong>{title}</strong> — {sub}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="cricket-countdown">
-                {[
-                  ["24", "Live"],
-                  ["7", "Days"],
-                  ["∞", "Pools"],
-                  ["🌍", "Global"],
-                ].map(([v, l]) => (
-                  <div className="cd-unit" key={l}>
-                    <span className="cd-val">{v}</span>
-                    <span className="cd-label">{l}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* <span className="card-cta-ghost">
-    Explore Ecosystem →
-  </span> */}
-          </div>
+         
 
           {/* CoinPoolX — LIVE */}
           <div className="product-card product-card-live">
@@ -410,7 +331,7 @@ export default function Coinpoolx() {
             <div className="btc-widget">
               <div className="btc-header">
                 <div className="btc-pair">
-                  <div className="btc-icon"></div>
+                  <div className="btc-icon">₿</div>
                   <span className="btc-label">BTC / USD</span>
                 </div>
                 <span className="btc-refresh">
@@ -447,9 +368,14 @@ export default function Coinpoolx() {
               </div>
             </div>
 
-            <Link href="/coinpoolx" className="card-cta">
-              Play CoinPoolX →
-            </Link>
+            <div className="cta-group">
+              <Link href="/register" className="card-cta">
+                Enter CoinPoolX
+              </Link>
+              <Link href="/coinpoolx" className="btn-secondary">
+                Learn More
+              </Link>
+            </div>
           </div>
 
           {/* CricketPoolX — COMING SOON */}
@@ -517,6 +443,79 @@ export default function Coinpoolx() {
 
             <span className="card-cta-ghost">Notify Me · Coming Soon</span>
           </div>
+
+          {/* PredictX */}
+
+<div className="product-card">
+  <div className="card-top-row">
+    <div className="card-icon-wrap">
+      <Image
+        src="/predictionpoolx.png"
+        alt="PredictionPoolX Logo"
+        width={48}
+        height={38}
+      />
+    </div>
+    <div className="badge-coming">Coming Soon</div>
+  </div>
+  
+
+  <div className="card-product-name">
+    PredictionPool<span>X</span>
+  </div>
+
+  <div className="card-parent-label">
+    Smart Predictions. Real Rewards.
+  </div>
+
+  <p className="card-desc">
+    PredictionPoolX is an advanced prediction platform where users forecast market
+    trends, sports outcomes, and global events. Compete with players worldwide,
+    improve your prediction skills, and earn exciting rewards.
+  </p>
+
+{/* PredictX Widget */}
+
+  <div className="cricket-widget">
+    <div className="cricket-coming-title">
+      Why Choose PredictionPoolX
+    </div>
+
+
+<div className="cricket-features">
+  {[
+    [
+      "AI-Powered Predictions",
+      "Make smarter decisions with data insights",
+    ],
+    [
+      "Multiple Prediction Categories",
+      "Sports, Markets, Entertainment & more",
+    ],
+    [
+      "Reward-Based Competitions",
+      "Earn rewards through accurate predictions",
+    ],
+    [
+      "Secure & Transparent",
+      "Fast and fair result settlements",
+    ],
+  ].map(([title, sub]) => (
+    <div className="cricket-feat" key={title}>
+      <div className="feat-dot" />
+      <div className="feat-text">
+        <strong>{title}</strong> — {sub}
+      </div>
+    </div>
+  ))}
+</div>
+ 
+
+
+  </div>
+   <span className="card-cta-ghost">Notify Me · Coming Soon</span>
+</div>
+
         </div>
       </section>
 
